@@ -17,7 +17,7 @@ export function LanguageProvider({children}:{children:React.ReactNode}) {
   useEffect(() => {
     if(!ready)return;
     document.documentElement.lang=locale;
-    document.title=locale==='en'?'Precidoc — Document preparation':'Precidoc — Persiapan dokumen';
+    document.title=locale==='en'?'Precidoc — Document preparation for AI / RAG':'Precidoc — Persiapan dokumen untuk AI / RAG';
     const description=document.querySelector('meta[name="description"]');
     description?.setAttribute('content',locale==='en'?'Extract, review, and prepare documents for your knowledge base, with source references attached.':'Ekstrak, periksa, dan siapkan dokumen untuk knowledge base dengan referensi sumber.');
     try { localStorage.setItem(STORAGE_KEY,locale); } catch { /* The language still works without persistence. */ }

@@ -80,5 +80,28 @@ export function makeSample():PreparedDocument{
   const text='# Runbook — Database Recovery\n\nDokumen ini menjadi panduan pemulihan layanan database untuk tim operasi. Semua tindakan harus dicatat pada incident record.\n\n## Prasyarat\n\n- Konfirmasi maintenance window dengan pemilik layanan.\n- Pastikan backup terakhir sudah diverifikasi.\n- Periksa akses operator yang melakukan pemulihan.\n\n## Prosedur pemulihan\n\n1. Periksa status replikasi sebelum menjalankan pemulihan.\n2. Verifikasi replication lag dan ketersediaan disk.\n3. Jalankan prosedur restore sesuai playbook yang disetujui.\n\n| Parameter | Batas |\n| --- | --- |\n| Replication lag | 30 detik |\n| Free disk | 20% |\n\nCatat hasil verifikasi dan waktu pelaksanaan pada incident record.';
   return{id:'sample_runbook',name:'Database-Recovery.md',format:'MD',bytes:new TextEncoder().encode(text).length,hash:'sample-document',title:'Runbook — Database Recovery',version:'',category:'Runbook',units:textUnits(text),notes:[],approved:false,sample:true};
 }
-export function makePackage(doc:PreparedDocument,chunks:Chunk[]){return{schemaVersion:'1.0',document:{id:doc.id,filename:doc.name,format:doc.format,sha256:doc.sample?null:doc.hash,title:doc.title,version:doc.version||null,category:doc.category,reviewedByUser:doc.approved,sourceUnits:doc.units.map(u=>({id:u.id,title:u.title,page:u.page??null,edited:u.text!==u.original}))},processing:{method:'rules-and-structure',ocrPerformed:false,llmUsed:false,tokenCountMethod:'characters_divided_by_4_estimate'},checks:findings(doc),chunks,exportedAt:new Date().toISOString()}}
+// Versioned, deterministic preparation checks; this is not a retrieval benchmark.
+export function knowledgeReadiness(doc: PreparedDocument, chunks: Chunk[]) {
+  const count = doc.units.length;
+  const populated = doc.units.filter(unit => unit.text.trim()).length;
+  const normalized = doc.units.map(unit => normalize(unit.text)).filter(Boolean);
+  const duplicates = normalized.length - new Set(normalized).size;
+  const metadataFields = [doc.title.trim(), doc.version.trim(), !['Belum ditentukan', 'Unspecified', 'Not specified', ''].includes(doc.category)];
+  const sourceIds = new Set(doc.units.map(unit => unit.id));
+  const components = [
+    { id: 'text', score: count ? Math.round(populated / count * 100) : 0, weight: 30 },
+    { id: 'metadata', score: Math.round(metadataFields.filter(Boolean).length / 3 * 100), weight: 20 },
+    { id: 'duplicates', score: normalized.length ? Math.round((1 - duplicates / normalized.length) * 100) : 0, weight: 15 },
+    { id: 'provenance', score: chunks.length ? Math.round(chunks.filter(chunk => chunk.sources.length > 0 && chunk.sources.every(source => sourceIds.has(source.unitId))).length / chunks.length * 100) : 0, weight: 20 },
+    { id: 'review', score: doc.approved ? 100 : 0, weight: 15 },
+  ];
+  const score = Math.round(components.reduce((sum, component) => sum + component.score * component.weight / 100, 0));
+  const blocked = findings(doc).some(check => check.severity === 'blocker') || !chunks.length;
+  return {
+    method: 'preparation-rules-v1', score, status: blocked ? 'blocked' : !doc.approved ? 'needs-review' : score >= 80 ? 'prepared' : 'needs-improvement', components,
+    metrics: { sourceUnits: count, populatedUnits: populated, emptyUnits: count - populated, duplicateUnits: duplicates, chunks: chunks.length, characters: normalized.reduce((sum, text) => sum + text.length, 0), detectedTables: doc.format === 'PDF' ? null : doc.units.reduce((sum, unit) => sum + unit.tableCount, 0), pdfPagesWithoutExtractedText: doc.format === 'PDF' ? count - populated : null },
+    notAssessed: ['semantic-quality', 'retrieval-accuracy', 'pii', 'language', 'ocr', 'pdf-table-layout'],
+  };
+}
+export function makePackage(doc:PreparedDocument,chunks:Chunk[]){return{schemaVersion:'1.1',document:{id:doc.id,filename:doc.name,format:doc.format,sha256:doc.sample?null:doc.hash,title:doc.title,version:doc.version||null,category:doc.category,reviewedByUser:doc.approved,sourceUnits:doc.units.map(u=>({id:u.id,title:u.title,page:u.page??null,edited:u.text!==u.original}))},processing:{method:'rules-and-structure',ocrPerformed:false,llmUsed:false,tokenCountMethod:'characters_divided_by_4_estimate'},readiness:knowledgeReadiness(doc,chunks),checks:findings(doc),chunks,exportedAt:new Date().toISOString()}}
 export function markdownExport(doc:PreparedDocument,chunks:Chunk[]){return`# ${doc.title}\n\n- File: ${doc.name}\n- Versi: ${doc.version||'Belum diisi'}\n- Jenis: ${doc.category}\n- Ditinjau pengguna: ${doc.approved?'Ya':'Tidak'}\n\n`+chunks.map((chunk,i)=>`## Chunk ${i+1}: ${chunk.title}\n\n${chunk.text}\n\nSumber: ${chunk.sources.map(s=>s.page?`halaman ${s.page} (${s.unitId})`:s.unitId).join(', ')}${chunk.edited?' · Teks telah diedit pengguna':''}\n`).join('\n')}

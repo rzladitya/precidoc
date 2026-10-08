@@ -21,7 +21,9 @@ export function localizedMarkdown(doc: PreparedDocument, chunks: Chunk[], locale
   const label = en ? { version: 'Version', type: 'Type', reviewed: 'Reviewed by you', missing: 'Not provided', yes: 'Yes', no: 'No', source: 'Source', edited: 'Text edited by you' }
     : { version: 'Versi', type: 'Jenis', reviewed: 'Ditinjau pengguna', missing: 'Belum diisi', yes: 'Ya', no: 'Tidak', source: 'Sumber', edited: 'Teks telah diedit pengguna' };
   const prepared = localizedPackage(doc, chunks, locale);
-  return `# ${doc.title}\n\n- File: ${doc.name}\n- ${label.version}: ${doc.version || label.missing}\n- ${label.type}: ${prepared.document.category}\n- ${label.reviewed}: ${doc.approved ? label.yes : label.no}\n\n` + prepared.chunks.map((chunk, i) =>
+  const report = prepared.readiness;
+  const readiness = `## Knowledge Readiness Score\n\n${report.score}/100 · ${report.status} · ${report.method}\n\n${report.components.map(component => `- ${component.id}: ${component.score}/100 (${component.weight}%)`).join('\n')}\n\n${en ? 'Not assessed' : 'Belum dinilai'}: ${report.notAssessed.join(', ')}. ${en ? 'Preparation checklist only; not a retrieval benchmark.' : 'Hanya checklist persiapan; bukan benchmark retrieval.'}\n\n`;
+  return `# ${doc.title}\n\n- File: ${doc.name}\n- ${label.version}: ${doc.version || label.missing}\n- ${label.type}: ${prepared.document.category}\n- ${label.reviewed}: ${doc.approved ? label.yes : label.no}\n\n` + readiness + prepared.chunks.map((chunk, i) =>
     `## Chunk ${i + 1}: ${chunk.title}\n\n${chunk.text}\n\n${label.source}: ${chunk.sources.map(source => source.page ? `${translate(`halaman ${source.page}`, locale)} (${source.unitId})` : source.unitId).join(', ')}${chunk.edited ? ` · ${label.edited}` : ''}\n`
   ).join('\n');
 }

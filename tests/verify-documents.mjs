@@ -79,3 +79,16 @@ const word=await d.parseFile(new File([fs.readFileSync('tests/fixtures/runbook.d
 assert.equal(word.units.length,2);assert.equal(word.units[1].tableCount,1);assert(word.units[1].text.includes('| Replication lag | 30 seconds |'));assert.equal(word.units[1].title,'Procedure');
 for(const doc of [parsedText,pdf,scanned,word])URL.revokeObjectURL(doc.objectUrl);
 console.log('Passed: Markdown, real PDF and DOCX extraction; trial PDF, size and character boundaries; full-workspace limits; blank PDF blocking; chunk boundaries; duplicate provenance; metadata checks; edited-source export; file validation.');
+const complete = {...sample, version:'v1', approved:true};
+const completeChunks = d.buildChunks(complete);
+assert.equal(d.knowledgeReadiness(complete, completeChunks).score,100);
+assert.equal(d.knowledgeReadiness(complete, completeChunks).status,'prepared');
+assert.equal(d.knowledgeReadiness({...complete,approved:false},completeChunks).status,'needs-review');
+assert.equal(d.knowledgeReadiness(scanned,[]).status,'blocked');
+assert.equal(d.knowledgeReadiness(scanned,[]).metrics.pdfPagesWithoutExtractedText,1);
+assert.equal(d.knowledgeReadiness(pdf,d.buildChunks(pdf)).metrics.detectedTables,null);
+assert.equal(d.knowledgeReadiness(complete,completeChunks.map(c=>({...c,sources:[]}))).components.find(c=>c.id==='provenance').score,0);
+const duplicateDoc={...complete,units:[complete.units[0],{...complete.units[0],id:'copy'}]};
+assert.equal(d.knowledgeReadiness(duplicateDoc,d.buildChunks(duplicateDoc)).metrics.duplicateUnits,1);
+assert.equal(d.makePackage(complete,completeChunks).readiness.score,100);
+console.log('Passed: readiness gating, missing PDF text, unknown PDF tables, invalid provenance, duplicate source reporting, exported readiness.');
