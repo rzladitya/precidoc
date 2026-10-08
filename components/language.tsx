@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 import { translate, type Locale } from '@/lib/i18n';
-import { pageTitles, pageDescriptions, type PageTitle } from '@/lib/page-titles';
+import { pageTitles, getPageDescription, getPageTitleForPath, type PageTitle } from '@/lib/page-titles';
 
 const STORAGE_KEY = 'precidoc-language';
 let fallbackLocale: Locale = 'en';
@@ -23,14 +23,16 @@ export function LanguageProvider({children}:{children:React.ReactNode}) {
   const ready = useSyncExternalStore(subscribe, () => true, () => false);
   const [override, setOverride] = useState<{path:string|null; title:PageTitle} | null>(null);
   const setPageTitle = useCallback((title: PageTitle | null) => setOverride(title ? {path:pathname,title} : null), [pathname]);
-  const base: PageTitle = pathname === '/sample' ? 'sample' : pathname === '/app' ? 'workspace' : pathname === '/register' ? 'signup' : pathname === '/auth/sign-in' ? 'signin' : pathname === '/auth/sign-out' ? 'signout' : pathname === '/auth/forgot-password' ? 'forgot' : pathname === '/auth/reset-password' ? 'reset' : 'home';
-  const title = `${pageTitles[override?.path === pathname ? override.title : base][locale === 'en' ? 0 : 1]} | Precidoc`;
+  const base = getPageTitleForPath(pathname);
+  const page = override?.path === pathname ? override.title : base;
+  const title = `${pageTitles[page][locale === 'en' ? 0 : 1]} | Precidoc`;
+  const pageDescription = getPageDescription(page, locale);
   useEffect(() => {
     document.documentElement.lang = locale;
     const updateHead = () => {
       if (document.title !== title) document.title = title;
       const description = document.querySelector('meta[name="description"]');
-      if (description?.getAttribute('content') !== pageDescriptions[locale]) description?.setAttribute('content', pageDescriptions[locale]);
+      if (description?.getAttribute('content') !== pageDescription) description?.setAttribute('content', pageDescription);
     };
     updateHead();
     // Next can stream route metadata after hydration. Keep the user's locale
@@ -38,7 +40,7 @@ export function LanguageProvider({children}:{children:React.ReactNode}) {
     const observer = new MutationObserver(updateHead);
     observer.observe(document.head, {childList:true, subtree:true, characterData:true});
     return () => observer.disconnect();
-  }, [locale,title]);
+  }, [locale,title,pageDescription]);
   const setLocale = useCallback((next: Locale) => {
     fallbackLocale = next;
     try { localStorage.setItem(STORAGE_KEY, next); } catch { /* Keep the choice in memory. */ }

@@ -6,7 +6,8 @@ import './demo.css';
 import './account.css';
 import './improvements.css';
 import './marketing-review.css';
+import './public-pages.css';
 import { LanguageProvider } from '@/components/language';
 import { pageMetadata } from '@/lib/page-titles';
-export const metadata:Metadata={...pageMetadata('home'),icons:{icon:'/favicon.svg',shortcut:'/favicon.svg'}};
+export const metadata:Metadata={...pageMetadata('home'),metadataBase:new URL('https://precidoc.rainc.web.id'),icons:{icon:'/favicon.svg',shortcut:'/favicon.svg'}};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body><LanguageProvider>{children}</LanguageProvider></body></html>}

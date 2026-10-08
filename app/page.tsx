@@ -1,11 +1,13 @@
 'use client';
 import Link from 'next/link';
 import { Braces, Check, LockKeyhole } from 'lucide-react';
-import { Brand, LogoMark } from '@/components/brand';
+import { LogoMark } from '@/components/brand';
+import { MarketingHeader, MarketingFooter } from '@/components/marketing-shell';
 import { DocumentMascot } from '@/components/document-mascot';
 import { DocumentChecks } from '@/components/document-checks';
 import { ProductDemo } from '@/components/product-demo';
-import { LanguageSwitch, useLanguage } from '@/components/language';
+import { Newsletter } from '@/components/newsletter';
+import { useLanguage } from '@/components/language';
 
 const faqs=[
   ['Dokumen apa yang bisa diproses?','PDF dengan teks yang dapat dipilih, DOCX, TXT, dan Markdown. Batasnya 15 MB per file, 200 halaman per PDF, dan 10 dokumen per tab. OCR untuk file scan belum tersedia.'],
@@ -17,11 +19,7 @@ const faqs=[
 export default function Home() {
   const {t,locale}=useLanguage();
   return <div className="landing saas-landing">
-    <header className="marketing-nav container">
-      <Link href="/" aria-label={t('Beranda Precidoc')}><Brand /></Link>
-      <nav aria-label={locale==='en'?'Main navigation':'Navigasi utama'}><a href="#produk">{locale==='en'?'Walkthrough':'Demo'}</a><a href="#fitur">{locale==='en'?'Document review':'Review dokumen'}</a><a href="#faq">FAQ</a></nav>
-      <div className="nav-actions"><LanguageSwitch/><Link href="/auth/sign-in" className="nav-sign-in">{locale==='en'?'Sign in':'Masuk'}</Link><Link href="/register" className="button nav-workspace">{t('Buka workspace')}</Link></div>
-    </header>
+    <MarketingHeader />
     <main>
       <section className="saas-hero container">
         <div className="hero-kicker hero-enter"><span>{(locale === 'en' ? 'DOCUMENT PREPARATION FOR ENTERPRISE AI / RAG' : 'PERSIAPAN DOKUMEN UNTUK AI / RAG ENTERPRISE')}</span></div>
@@ -36,7 +34,8 @@ export default function Home() {
       <DocumentChecks/>
       <section id="faq" className="faq-section container"><div><h2>{t('Pertanyaan umum')}</h2><p className="faq-intro">{t('Fitur yang tersedia saat ini, dan hal yang perlu kamu periksa.')}</p></div><div className="faq-list">{faqs.map(([question,answer])=><details key={question}><summary>{t(question)}</summary><p>{t(answer)}</p></details>)}</div></section>
       <section className="saas-closing container"><div className="closing-inner"><LogoMark/><h2>{t('Coba dengan dokumenmu.')}</h2><p>{t('Baca. Periksa. Rapikan. Lalu bawa hasilnya ke langkah berikutnya.')}</p><div className="hero-actions"><Link href="/register" className="button primary">{t('Buka workspace Precidoc')}</Link><Link href="/sample" className="button text-button">{t('Coba dengan contoh')}</Link></div></div></section>
+      <Newsletter />
     </main>
-    <footer className="footer container"><Brand/><span>© {new Date().getFullYear()} Rainc</span></footer>
+    <MarketingFooter />
   </div>;
 }

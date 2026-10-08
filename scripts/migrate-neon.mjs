@@ -9,3 +9,18 @@ await sql`CREATE TABLE IF NOT EXISTS precidoc_accounts (
   created_at text NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`;
 console.log('Precidoc account table is available in Neon.');
+await sql`CREATE TABLE IF NOT EXISTS precidoc_newsletter (
+  email text PRIMARY KEY NOT NULL,
+  locale text NOT NULL CHECK (locale IN ('en', 'id')),
+  unsubscribe_token text UNIQUE NOT NULL,
+  consent_version text NOT NULL,
+  consent_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  subscribed_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  unsubscribed_at timestamptz
+)`;
+await sql`CREATE TABLE IF NOT EXISTS precidoc_newsletter_rate (
+  fingerprint text PRIMARY KEY NOT NULL,
+  bucket integer NOT NULL,
+  attempts integer NOT NULL
+)`;
+console.log('Precidoc newsletter tables are available in Neon.');
