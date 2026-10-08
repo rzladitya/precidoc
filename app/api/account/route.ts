@@ -1,9 +1,9 @@
-import { getChatGPTUser } from '@/app/chatgpt-auth';
+import { getUser } from '@/app/auth';
 import { createAccount } from '@/db/accounts';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  const user = await getChatGPTUser();
+  const user = await getUser();
   if (!user) return Response.json({ error: 'sign_in_required' }, { status: 401 });
   const origin = request.headers.get('origin');
   if (!origin || origin !== new URL(request.url).origin) return Response.json({ error: 'invalid_origin' }, { status: 403 });

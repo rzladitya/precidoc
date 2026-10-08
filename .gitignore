@@ -44,3 +44,9 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+
+# Cloudflare Next.js output and local secrets
+/.open-next/
+/.dev.vars*
+/.neon
+/skills-lock.json

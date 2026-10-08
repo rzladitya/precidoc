@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "precidoc",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-07",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "precidoc"
+    }
+  ],
+  "routes": [
+    {
+      "pattern": "precidoc.rainc.web.id",
+      "custom_domain": true
+    }
+  ],
+  "workers_dev": false,
+  "minify": true
+}
