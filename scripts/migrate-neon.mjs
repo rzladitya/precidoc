@@ -8,4 +8,4 @@ await sql`CREATE TABLE IF NOT EXISTS precidoc_accounts (
   display_name text NOT NULL,
   created_at text NOT NULL DEFAULT CURRENT_TIMESTAMP
 )`;
-console.log('PreciDoc account table is available in Neon.');
+console.log('Precidoc account table is available in Neon.');

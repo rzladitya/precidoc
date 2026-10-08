@@ -1,4 +1,4 @@
-# PreciDoc: Neon + Cloudflare Workers
+# Precidoc: Neon + Cloudflare Workers
 
 The app uses Next.js, OpenNext for Workers, Neon Postgres for account profiles,
 and Neon Auth for Google/email sessions. Uploaded documents still stay in browser
@@ -90,6 +90,6 @@ No R2 bucket or D1 database is required for the current account/document workflo
 Check current Cloudflare and Neon free-tier quotas before production launch.
 
 Validate the deployed homepage and `/sample`, sign up, verify email, sign in,
-create the PreciDoc account, reload `/app`, and sign out. Confirm unauthenticated
+create the Precidoc account, reload `/app`, and sign out. Confirm unauthenticated
 account requests return 401 and forged Sites identity headers cannot grant access.
 Live positive authentication/database checks require actual credentials.

@@ -1,4 +1,4 @@
-# PreciDoc by Rainc — full source code
+# Precidoc by Rainc — full source code
 
 Source export of the latest deployed website, dated 8 October 2026.
 
@@ -9,7 +9,7 @@ The application uses React 19, TypeScript, Next.js, OpenNext for Cloudflare Work
 - English and Indonesian interface, plus light and graphite themes.
 - Interactive product demo on the landing page.
 - `/sample`: a basic workspace with a built-in example. Replace the example with one PDF, DOCX, TXT, or Markdown file. Trial limits: one active document, 5 MB, 20 PDF pages, and 100,000 extracted characters. Edit text, inspect chunks, review, and download Markdown.
-- `/register`: Google/email sign-in through Neon Auth followed by PreciDoc account registration.
+- `/register`: Google/email sign-in through Neon Auth followed by Precidoc account registration.
 - `/app`: server-protected full workspace. Limits: 10 documents per tab, 5 files per upload batch, 15 MB per file, 200 PDF pages, and 750,000 extracted characters per file. Metadata, chunk size, deduplication, and JSON/Markdown export controls are enabled.
 - `/api/account`: validates registration and stores the account in Neon Postgres.
 - Source references, manual edits, rule checks, and manual review before export.

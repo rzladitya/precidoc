@@ -38,7 +38,7 @@ export function AuthForm() {
     finally { setBusy(false); }
   }
   return <main className="account-page"><section className="account-form-panel" style={{ maxWidth: 480, margin: '48px auto' }}>
-    <h1>{signup ? 'Create your PreciDoc login' : 'Sign in to PreciDoc'}</h1>
+    <h1>{signup ? 'Create your Precidoc login' : 'Sign in to Precidoc'}</h1>
     <button className="button outline" onClick={google} disabled={busy}>Continue with Google</button>
     <form onSubmit={submit}>
       {signup && <label>Name<input required minLength={2} maxLength={80} value={name} onChange={e => setName(e.target.value)} autoComplete="name" disabled={busy}/></label>}
@@ -48,6 +48,6 @@ export function AuthForm() {
     </form>
     {message && <p role="alert">{message}</p>}
     <button className="button outline" onClick={() => { setSignup(!signup); setMessage(''); }} disabled={busy}>{signup ? 'Already have a login? Sign in' : 'Create a new login'}</button>
-    <p><Link href="/sample">Try PreciDoc without signing in</Link></p>
+    <p><Link href="/sample">Try Precidoc without signing in</Link></p>
   </section></main>;
 }

@@ -13,5 +13,5 @@ export default function SignOutPage() {
     } catch { setError('Could not sign out. Please try again.'); }
     finally { setBusy(false); }
   }
-  return <main className="account-form-panel" style={{ maxWidth: 480, margin: '48px auto' }}><h1>Sign out of PreciDoc</h1><button className="button primary" disabled={busy} onClick={signOut}>{busy ? 'Signing out…' : 'Confirm sign out'}</button>{error && <p role="alert">{error}</p>}</main>;
+  return <main className="account-form-panel" style={{ maxWidth: 480, margin: '48px auto' }}><h1>Sign out of Precidoc</h1><button className="button primary" disabled={busy} onClick={signOut}>{busy ? 'Signing out…' : 'Confirm sign out'}</button>{error && <p role="alert">{error}</p>}</main>;
 }
