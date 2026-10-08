@@ -1,0 +1,77 @@
+/* Landing navigation and document review: a real example beside concrete actions. */
+.saas-landing .marketing-nav { min-height: 82px; gap: 32px; }
+.marketing-nav > a { flex-shrink: 0; }
+.saas-landing .marketing-nav .brand .brand-mark { width: 32px; height: 32px; }
+.saas-landing .marketing-nav .brand .brand-wordmark { font-size: 1.3rem; letter-spacing: -.04em; }
+.saas-landing .marketing-nav .brand small { font-size: .6875rem; margin-top: 4px; }
+.saas-landing .marketing-nav nav { margin-right: auto; margin-left: 24px; gap: 24px; font-size: .8125rem; }
+.saas-landing .marketing-nav .nav-actions { gap: 20px; }
+.marketing-nav .nav-sign-in { display: inline-flex; align-items: center; min-height: 44px; color: #263348; font-size: .8125rem; white-space: nowrap; }
+.marketing-nav .nav-sign-in:hover { color: #245cec; }
+.marketing-nav .language-switch { padding: 2px; border: 0; background: transparent; }
+.marketing-nav .language-switch button { min-width: 36px; min-height: 32px; }
+.marketing-nav .language-switch-active { left: 2px; top: 2px; bottom: 2px; width: 36px; background: #edf3ff; box-shadow: none; }
+.marketing-nav .language-switch-active.is-id { transform: translateX(36px); }
+.saas-landing .marketing-nav .button.nav-workspace { min-height: 42px; border-color: #245cec; background: #245cec; color: white; padding: 9px 16px; font-size: .8125rem; }
+.saas-landing .marketing-nav .button.nav-workspace:hover { background: #1e4fd0; border-color: #1e4fd0; transform: none; }
+
+.document-checks { padding-top: 96px; padding-bottom: 84px; position: relative; }
+.document-checks-anchor { position: absolute; top: 0; }
+.document-checks-heading { max-width: 780px; margin-bottom: 48px; }
+.document-checks-heading > span { color: #526174; font-size: .6875rem; letter-spacing: .1em; font-weight: 600; }
+.saas-landing .document-checks-heading h2 { margin: 14px 0 20px; font-size: clamp(2rem, 3.3vw, 2.8rem); line-height: 1.2; letter-spacing: -.035em; font-weight: 650; text-wrap: balance; }
+.document-checks-heading p { max-width: 620px; color: #526174; font-size: 1rem; line-height: 1.75; }
+.document-checks-body { display: grid; grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr); gap: 80px; align-items: start; }
+.review-document { margin: 0; background: white; border: 1px solid #dbe2ed; border-radius: 4px; }
+.review-document-file { padding: 24px 28px 20px; border-bottom: 1px solid #dbe2ed; }
+.review-document-file > span { display: block; color: #526174; font-size: .625rem; letter-spacing: .09em; margin-bottom: 8px; }
+.review-document-file > strong { font-family: ui-monospace, monospace; font-weight: 500; font-size: .875rem; overflow-wrap: anywhere; }
+.review-document-text { padding: 24px 28px 28px; }
+.review-document-section { display: flex; justify-content: space-between; gap: 12px; color: #526174; font-size: .6875rem; }
+.review-document-section > span:first-child { font-family: ui-monospace, monospace; }
+.review-document-text h3 { font-size: 1.25rem; letter-spacing: -.02em; font-weight: 650; margin: 24px 0 16px; }
+.review-document-text ol { margin: 0 0 24px; padding-left: 20px; list-style: decimal; color: #37465b; font-size: .875rem; line-height: 1.75; }
+.review-document-text li { padding-left: 3px; margin: 6px 0; }
+.review-document-text table { border-collapse: collapse; width: 100%; text-align: left; font-size: .8125rem; }
+.review-document-text caption { text-align: left; font-size: .6875rem; color: #526174; padding-bottom: 10px; }
+.review-document-text th, .review-document-text td { padding: 11px 12px; border-bottom: 1px solid #dbe2ed; }
+.review-document-text th { font-weight: 500; color: #526174; border-top: 1px solid #dbe2ed; }
+.review-document-text td:last-child { background: #f2f6ff; color: #1e4fd0; }
+.review-document-checks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #dbe2ed; margin: 0; padding: 20px 28px; gap: 14px; }
+.review-document-checks dt { color: #526174; font-size: .6875rem; margin-bottom: 6px; }
+.review-document-checks dd { margin: 0; font-size: .875rem; font-weight: 600; }
+.review-document-checks .review-value-warning { color: #8a5200; }
+.review-document-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 28px; border-top: 1px solid #dbe2ed; }
+.review-document-foot > span { font-size: .6875rem; color: #526174; }
+.review-document-foot a { display: inline-flex; align-items: center; min-height: 32px; gap: 8px; color: #245cec; font-size: .75rem; }
+.document-review-actions article { padding: 30px 0; border-top: 1px solid #dbe2ed; }
+.document-review-actions article:first-child { padding-top: 12px; border-top: 0; }
+.document-review-actions article:last-child { padding-bottom: 0; }
+.document-review-actions h3 { font-size: 1.375rem; letter-spacing: -.025em; line-height: 1.35; font-weight: 600; margin: 0 0 14px; }
+.document-review-actions p { color: #526174; font-size: .9375rem; line-height: 1.8; margin: 0 0 16px; max-width: 430px; }
+.document-review-actions a { display: inline-flex; align-items: center; gap: 18px; min-height: 40px; color: #245cec; font-size: .8125rem; text-decoration: underline; text-decoration-color: #c6d7f1; text-underline-offset: 6px; }
+.document-review-actions a:hover, .review-document-foot a:hover { color: #1e4fd0; }
+.saas-landing #faq { border-top: 1px solid #dbe2ed; }
+
+@media (max-width: 1050px) {
+  .document-checks-body { gap: 44px; }
+}
+@media (max-width: 900px) {
+  .document-checks { padding-top: 64px; padding-bottom: 64px; }
+  .document-checks-body { grid-template-columns: 1fr; gap: 36px; }
+  .review-document { max-width: 640px; }
+  .document-review-actions { max-width: 640px; }
+}
+@media (max-width: 720px) {
+  .saas-landing .marketing-nav { min-height: 76px; gap: 12px; }
+  .saas-landing .marketing-nav .nav-actions { gap: 12px; }
+  .saas-landing .marketing-nav .brand .brand-mark { width: 29px; height: 29px; }
+  .saas-landing .marketing-nav .brand .brand-wordmark { font-size: 1.15rem; }
+  .saas-landing .marketing-nav .brand small { font-size: .625rem; }
+  .document-checks-heading { margin-bottom: 32px; }
+  .document-checks-heading p { font-size: .9375rem; }
+  .review-document-file, .review-document-text { padding: 22px; }
+  .review-document-checks { padding: 20px 22px; gap: 10px; }
+  .review-document-foot { padding: 14px 22px; }
+  .document-review-actions h3 { font-size: 1.25rem; }
+}
