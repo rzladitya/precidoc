@@ -29,17 +29,8 @@ export function AuthForm() {
     } catch { setMessage('Sign-in is temporarily unavailable. Please try again.'); }
     finally { setBusy(false); }
   }
-  async function google() {
-    if (busy) return; setBusy(true); setMessage('');
-    try {
-      const result = await authClient.signIn.social({ provider: 'google', callbackURL: window.location.origin + destination() });
-      if (result.error) setMessage(result.error.message ?? 'Google sign-in failed.');
-    } catch { setMessage('Google sign-in is temporarily unavailable.'); }
-    finally { setBusy(false); }
-  }
   return <main className="account-page"><section className="account-form-panel" style={{ maxWidth: 480, margin: '48px auto' }}>
     <h1>{signup ? 'Create your Precidoc login' : 'Sign in to Precidoc'}</h1>
-    <button className="button outline" onClick={google} disabled={busy}>Continue with Google</button>
     <form onSubmit={submit}>
       {signup && <label>Name<input required minLength={2} maxLength={80} value={name} onChange={e => setName(e.target.value)} autoComplete="name" disabled={busy}/></label>}
       <label>Email<input required type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" disabled={busy}/></label>

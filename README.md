@@ -9,7 +9,7 @@ The application uses React 19, TypeScript, Next.js, OpenNext for Cloudflare Work
 - English and Indonesian interface, plus light and graphite themes.
 - Interactive product demo on the landing page.
 - `/sample`: a basic workspace with a built-in example. Replace the example with one PDF, DOCX, TXT, or Markdown file. Trial limits: one active document, 5 MB, 20 PDF pages, and 100,000 extracted characters. Edit text, inspect chunks, review, and download Markdown.
-- `/register`: Google/email sign-in through Neon Auth followed by Precidoc account registration.
+- `/register`: Email/password sign-in through Neon Auth followed by Precidoc account registration.
 - `/app`: server-protected full workspace. Limits: 10 documents per tab, 5 files per upload batch, 15 MB per file, 200 PDF pages, and 750,000 extracted characters per file. Metadata, chunk size, deduplication, and JSON/Markdown export controls are enabled.
 - `/api/account`: validates registration and stores the account in Neon Postgres.
 - Source references, manual edits, rule checks, and manual review before export.
@@ -45,7 +45,7 @@ node tests/verify-trial.cjs
 pnpm build:worker
 ```
 
-The document tests use real PDF/DOCX fixtures and cover extraction, trial boundaries, source edits, duplicate provenance, and export. Account tests use SQLite as a local adapter for parameterized SQL templates and simulate verified Neon sessions. Trial tests mount the actual React components with a simulated DOM and exercise their handlers. These tests do not perform a live Google/email authentication flow or replace a visual browser review.
+The document tests use real PDF/DOCX fixtures and cover extraction, trial boundaries, source edits, duplicate provenance, and export. Account tests use SQLite as a local adapter for parameterized SQL templates and simulate verified Neon sessions. Trial tests mount the actual React components with a simulated DOM and exercise their handlers. These tests do not perform a live Email/password authentication flow or replace a visual browser review.
 
 The PDF.js worker, CMaps, standard fonts, and their bundled licenses are included under `public/`. Update those assets together when changing the PDF.js version.
 

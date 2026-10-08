@@ -1,7 +1,7 @@
 # Precidoc: Neon + Cloudflare Workers
 
 The app uses Next.js, OpenNext for Workers, Neon Postgres for account profiles,
-and Neon Auth for Google/email sessions. Uploaded documents still stay in browser
+and Neon Auth for email/password sessions. Uploaded documents still stay in browser
 memory; this change does not implement persistent document storage or billing.
 
 ## Prerequisites
@@ -33,9 +33,8 @@ neon deploy
 configures Neon services and pulls local environment variables; it does not
 publish the frontend or run the account-table migration.
 
-Enable email verification and Google/email login on the production branch. Add
-`https://precidoc.rainc.web.id` as a trusted Auth origin. Production Google login
-needs a Google OAuth app configured in Neon; use the branch Auth callback URL.
+Enable email verification and email/password login on the production branch. Add
+`https://precidoc.rainc.web.id` as a trusted Auth origin. Google OAuth is not required for this email/password workflow.
 Configure production SMTP for account verification and recovery emails.
 
 Required application variables:

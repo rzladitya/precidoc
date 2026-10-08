@@ -73,7 +73,7 @@ async function mount(component,props){await act(async()=>{root.render(React.crea
  await click(document.querySelector('[aria-label="Remove document from this tab"]'));await upload([new File(['Replacement'],'replacement.txt')]);assert.equal(document.querySelectorAll('.document-item').length,1);
  await act(async()=>{root.render(null);await tick();});
  await mount(Registration,{user:null,signInHref:'/auth/sign-in?returnTo=%2Fregister'});
- const signIn=[...document.querySelectorAll('a')].find(a=>a.textContent==='Sign in with Google or email');assert.equal(signIn.getAttribute('target'),'_top');assert(signIn.getAttribute('href').startsWith('/auth/sign-in'));
+ const signIn=[...document.querySelectorAll('a')].find(a=>a.textContent==='Sign in with email and password');assert.equal(signIn.getAttribute('target'),'_top');assert(signIn.getAttribute('href').startsWith('/auth/sign-in'));
  await act(async()=>{root.render(null);await tick();});
  let posted,redirected;
  globalThis.fetch=async (url,options)=>{posted={url,options};return Response.json({account:{name:'Trial user',email:'verified@example.test'}});};
@@ -84,5 +84,5 @@ async function mount(component,props){await act(async()=>{root.render(React.crea
  globalThis.fetch=async()=>Response.json({error:'account_unavailable'},{status:503});
  await act(async()=>{document.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));await tick();});assert(document.querySelector('.account-error').textContent.includes('unavailable'));assert.equal(document.querySelector('input').value,'Trial user');
  await act(async()=>root.unmount());
- console.log('Passed trial/registration interactions: one-document batch limit, 5 MB cap, sample replacement, blocked second upload, edit/chunk/Markdown export, gated JSON/settings, bilingual UI, Google/email sign-in link, registration submission, and preserved input on failure.');
+ console.log('Passed trial/registration interactions: one-document batch limit, 5 MB cap, sample replacement, blocked second upload, edit/chunk/Markdown export, gated JSON/settings, bilingual UI, email/password sign-in link, registration submission, and preserved input on failure.');
 })().catch(async error=>{console.error(error);await act(async()=>root.unmount());process.exitCode=1;});
