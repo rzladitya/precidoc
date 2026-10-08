@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
-export const metadata: Metadata = { title: 'Sign In | Precidoc' };
 import { AuthForm } from '@/components/auth-form';
+import { pageMetadata } from '@/lib/page-titles';
+export const metadata = pageMetadata('signin');
 export default function SignInPage() { return <AuthForm/>; }

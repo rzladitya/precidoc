@@ -5,4 +5,4 @@ export default async function proxy(request: NextRequest) {
   try { return await getAuth().middleware({ loginUrl: '/auth/sign-in' })(request); }
   catch { return NextResponse.redirect(new URL('/auth/sign-in', request.url)); }
 }
-export const config = { matcher: ['/app/:path*', '/register'] };
+export const config = { matcher: ['/app/:path*'] };

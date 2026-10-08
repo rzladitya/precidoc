@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { AccountShell } from './account-shell';
 import { AuthForm } from './auth-form';
-import { useLanguage } from '@/components/language';
+import { useLanguage, usePageTitle } from '@/components/language';
 
 const wording = {
   en: {
     title: 'Create your Precidoc account', intro: 'Register to use the full document workspace.',
     identity: 'Continue with your email account, then confirm your name for Precidoc.', continue: 'Sign in with email and password',
-    name: 'Your name', email: 'Email from your email account', submit: 'Create account and open workspace', saving: 'Creating account…',
+    name: 'Your name', email: 'Verified email', submit: 'Create account and open workspace', saving: 'Creating account…',
     sample: 'Try the sample first', already: 'Your Precidoc account will use this verified identity.',
     features: ['Up to 10 documents per tab', 'Files up to 15 MB and PDFs up to 200 pages', 'Chunk size and deduplication controls', 'JSON and Markdown export'],
     note: 'Document processing still happens in your browser. Your account does not save uploaded documents.',
@@ -21,7 +21,7 @@ const wording = {
   id: {
     title: 'Buat akun Precidoc', intro: 'Daftar untuk menggunakan workspace dokumen lengkap.',
     identity: 'Lanjutkan dengan akun email, lalu lengkapi nama akun Precidoc kamu.', continue: 'Masuk dengan email dan password',
-    name: 'Nama kamu', email: 'Email dari akun email', submit: 'Buat akun dan buka workspace', saving: 'Membuat akun…',
+    name: 'Nama kamu', email: 'Email terverifikasi', submit: 'Buat akun dan buka workspace', saving: 'Membuat akun…',
     sample: 'Coba contoh terlebih dahulu', already: 'Akun Precidoc kamu akan memakai identitas yang sudah terverifikasi ini.',
     features: ['Hingga 10 dokumen per tab', 'File hingga 15 MB dan PDF hingga 200 halaman', 'Pengaturan ukuran chunk dan deduplikasi', 'Ekspor JSON dan Markdown'],
     note: 'Dokumen tetap diproses di browser. Akun kamu tidak menyimpan dokumen yang diunggah.',
@@ -33,6 +33,7 @@ const wording = {
 
 export function Registration({ user, signInHref, unavailable = false }: { user: { email: string; name: string } | null; signInHref: string; unavailable?: boolean }) {
   const { locale } = useLanguage();
+  usePageTitle(user ? 'profile' : 'signup');
   const copy = wording[locale];
   const [name, setName] = useState(user?.name ?? '');
   const [busy, setBusy] = useState(false);

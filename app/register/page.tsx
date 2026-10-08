@@ -1,9 +1,9 @@
-import type { Metadata } from 'next';
-export const metadata: Metadata = { title: 'Create an Account | Precidoc' };
 import { redirect } from 'next/navigation';
 import { getUser, signInPath } from '@/app/auth';
 import { findAccount } from '@/db/accounts';
 import { Registration } from '@/components/registration';
+import { pageMetadata } from '@/lib/page-titles';
+export const metadata = pageMetadata('signup');
 export const dynamic = 'force-dynamic';
 
 export default async function RegisterPage() {

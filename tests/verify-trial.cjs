@@ -28,9 +28,11 @@ Module._resolveFilename = function(request,parent,...args){if(request.startsWith
 const originalLoad = Module._load;
 let downloads = [];
 let verified=false,invalidOtp=true,otpSent=0;
+let resetRequest,resetSubmission,resetFails=false;
 const authClient={signUp:{email:async()=>({data:{},error:null})},signIn:{email:async()=>({error:{code:'EMAIL_NOT_VERIFIED',message:'Verify your email'}})},getSession:async()=>({data:{user:{emailVerified:verified}}}),emailOtp:{verifyEmail:async({otp})=>{assert.equal(otp,'123456');if(invalidOtp)return{error:{message:'Invalid code'}};verified=true;return{error:null};},sendVerificationOtp:async({email,type})=>{assert.equal(email,'test@example.test');assert.equal(type,'email-verification');otpSent++;return{error:null};}}};
 Module._load = function(request,parent,...args){
- if(request==='@/lib/auth/client')return{authClient};
+ if(request==='@/lib/auth/client')return{authClient:{...authClient,requestPasswordReset:async payload=>{resetRequest=payload;return{error:resetFails?{code:'FAILED'}:null};},resetPassword:async payload=>{resetSubmission=payload;return{error:resetFails?{code:'FAILED'}:null};}}};
+ if(request==='next/navigation')return{usePathname:()=>'/auth/sign-in',useSearchParams:()=>new URLSearchParams(window.location.search)};
  if(request==='next/link') return {__esModule:true,default:props=>require('react').createElement('a',props,props.children)};
  if(request==='@/lib/download') return {downloadFile:(content,name,mime)=>downloads.push({content,name,mime})};
  return originalLoad.call(this,request,parent,...args);
@@ -46,15 +48,16 @@ const { ProductDemo } = require('../components/product-demo.tsx');
 const { Workspace } = require('../components/workspace.tsx');
 const { Registration } = require('../components/registration.tsx');
 const { AuthForm }=require('../components/auth-form.tsx');
+const { PasswordRecovery }=require('../components/password-recovery.tsx');
 const { act } = React;
 const root = createRoot(document.getElementById('root'));
 const tick = () => new Promise(resolve=>setTimeout(resolve,40));
 async function click(node){assert(node,'Missing click target');await act(async()=>{const down=new window.Event('mousedown',{bubbles:true});Object.assign(down,{button:0,ctrlKey:false});node.dispatchEvent(down);node.dispatchEvent(new window.Event('click',{bubbles:true}));await tick();});}
-function tab(value){return [...document.querySelectorAll('[role=tab]')].find(node=>node.textContent.includes(value));}
+function tab(value){return [...document.querySelectorAll('[role=tab]')].find(node=>node.getAttribute('aria-label')===value||node.textContent.includes(value));}
 function button(value){return [...document.querySelectorAll('button')].find(node=>node.textContent===value);}
 let setLocale; function Bridge({component,props}){setLocale=useLanguage().setLocale;return React.createElement(component,props);}
 async function change(node,value){assert(node);const key=Object.keys(node).find(key=>key.startsWith('__reactProps$'));assert(node[key].onChange);await act(async()=>{node[key].onChange({target:{value}});await tick();});}
-async function mount(component,props){await act(async()=>{root.render(React.createElement(LanguageProvider,null,React.createElement(Bridge,{component,props})));await tick();});}
+async function mount(component,props){await act(async()=>{root.render(React.createElement(LanguageProvider,null,React.createElement(Bridge,{component,props})));await tick();});await act(async()=>{await tick();});}
 (async()=>{
  await mount(Workspace,{trial:true});
  assert.equal(document.querySelectorAll('.document-item').length,1);
@@ -88,6 +91,7 @@ async function mount(component,props){await act(async()=>{root.render(React.crea
  globalThis.fetch=async()=>Response.json({error:'account_unavailable'},{status:503});
  await act(async()=>{document.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));await tick();});assert(document.querySelector('.account-error').textContent.includes('unavailable'));assert.equal(document.querySelector('input').value,'Trial user');
  await act(async()=>{root.render(null);await tick();});
+ let cooldownCallback;const nativeTimeout=globalThis.setTimeout;globalThis.setTimeout=(fn,delay,...args)=>delay===1000?(cooldownCallback=fn,123456789):nativeTimeout(fn,delay,...args);
  await mount(AuthForm,{});
  assert(!document.body.textContent.includes('Google'));
  await click(button('Create an account'));
@@ -98,10 +102,27 @@ async function mount(component,props){await act(async()=>{root.render(React.crea
  await submitAuth();assert(document.querySelector('h1').textContent.includes('Verify your email'));
  await change(document.querySelector('input'),'123456');
  await submitAuth();assert(document.querySelector('[role=alert]').textContent.includes('Invalid code'));assert.equal(verified,false);
+ assert([...document.querySelectorAll('button')].some(node=>node.textContent.startsWith('Resend in')&&node.disabled));
+ for(let i=0;i<30;i++)await act(async()=>{cooldownCallback();await tick();});
+ globalThis.setTimeout=nativeTimeout;
  await click(button('Resend code'));assert.equal(otpSent,1);
  window.location.search='?returnTo=https%3A%2F%2Fevil.test';invalidOtp=false;
  await submitAuth();assert.equal(verified,true);assert.equal(redirected,'/register');
+ await act(async()=>{root.render(null);await tick();});
+ window.location.search='';
+ await mount(PasswordRecovery,{});
+ await change(document.querySelector('input[type=email]'),'test@example.test');
+ resetFails=true;await submitAuth();assert(document.querySelector('[role=alert]').textContent.includes('Unable to continue'));assert.equal(document.querySelector('input').value,'test@example.test');
+ resetFails=false;await submitAuth();assert.deepEqual(resetRequest,{email:'test@example.test',redirectTo:'http://example.test/auth/reset-password'});assert(document.querySelector('[role=status]').textContent.includes('If an account exists'));
+ await act(async()=>{root.render(null);await tick();});
+ await mount(PasswordRecovery,{reset:true});assert(document.querySelector('[role=alert]').textContent.includes('missing or invalid'));assert.equal(document.querySelector('form'),null);
+ await act(async()=>{root.render(null);await tick();});
+ window.location.search='?token=test-only-reset-token';await mount(PasswordRecovery,{reset:true});
+ await change(document.querySelectorAll('input')[0],'replacement-test-password');await change(document.querySelectorAll('input')[1],'wrong-password');assert(button('Update password').disabled);assert.equal(resetSubmission,undefined);
+ await change(document.querySelectorAll('input')[1],'replacement-test-password');resetFails=true;await submitAuth();assert(document.querySelector('[role=alert]').textContent.includes('Unable to continue'));
+ resetFails=false;await submitAuth();assert.deepEqual(resetSubmission,{newPassword:'replacement-test-password',token:'test-only-reset-token'});assert(document.querySelector('[role=status]').textContent.includes('Password updated'));
  await act(async()=>root.unmount());
+ console.log('Passed password recovery UI: safe request confirmation, preserved input on failure, missing-token rejection, confirmation mismatch, invalid token error, and successful reset submission.');
  console.log('Passed mocked email verification UI: signup to OTP, invalid code rejection, resend, verified session redirect, and external return URL rejection.');
  console.log('Passed trial/registration interactions: one-document batch limit, 5 MB cap, sample replacement, blocked second upload, edit/chunk/Markdown export, gated JSON/settings, bilingual UI, email/password sign-in link, registration submission, and preserved input on failure.');
 })().catch(async error=>{console.error(error);await act(async()=>root.unmount());process.exitCode=1;});

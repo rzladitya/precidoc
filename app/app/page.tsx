@@ -3,6 +3,8 @@ import { Workspace } from '@/components/workspace';
 import { Registration } from '@/components/registration';
 import { getUser, signInPath, signOutPath } from '@/app/auth';
 import { findAccount } from '@/db/accounts';
+import { pageMetadata } from '@/lib/page-titles';
+export const metadata = pageMetadata('workspace');
 export const dynamic = 'force-dynamic';
 
 export default async function AppPage() {

@@ -92,3 +92,18 @@ const duplicateDoc={...complete,units:[complete.units[0],{...complete.units[0],i
 assert.equal(d.knowledgeReadiness(duplicateDoc,d.buildChunks(duplicateDoc)).metrics.duplicateUnits,1);
 assert.equal(d.makePackage(complete,completeChunks).readiness.score,100);
 console.log('Passed: readiness gating, missing PDF text, unknown PDF tables, invalid provenance, duplicate source reporting, exported readiness.');
+// Regression: generated PDF page titles must not prevent exact-text deduplication.
+const repeatedPdf={...complete,format:'PDF',units:[{...complete.units[0],id:'page_1',page:1,title:'Halaman 1'},{...complete.units[0],id:'page_2',page:2,title:'Halaman 2'}]};
+const repeatedChunks=d.buildChunks(repeatedPdf,2000,true);
+assert.equal(repeatedChunks.length,1);assert.deepEqual(repeatedChunks[0].sources.map(s=>s.page),[1,2]);
+assert.equal(d.knowledgeReadiness(repeatedPdf,repeatedChunks).metrics.duplicateUnits,1);
+assert.equal(d.buildChunks(repeatedPdf,2000,false).length,2);
+const contextual={...complete,units:[{...complete.units[0],title:'Backup'},{...complete.units[0],id:'different-context',title:'Restore'}]};
+assert.equal(d.buildChunks(contextual).length,2);assert.equal(d.knowledgeReadiness(contextual,d.buildChunks(contextual)).metrics.duplicateUnits,0);
+const table='| Name | Value |\n| --- | --- |\n| A | 1 |';
+assert.equal(d.countMarkdownTables(table+'\n\nDifferent table\n\n'+table),2);
+assert.equal(d.countMarkdownTables('```md\n'+table+'\n```'),0);
+assert.equal(d.countMarkdownTables('text | --- is not a table'),0);
+assert.equal(d.countMarkdownTables('Name | Value\n:--- | ---:\nA | 1'),1);
+const multiTable=await d.parseFile(new File(['# Tables\n\n'+table+'\n\n'+table],'tables.md'),()=>{});assert.equal(multiTable.units[0].tableCount,2);URL.revokeObjectURL(multiTable.objectUrl);
+console.log('Passed regressions: PDF dedup preserves both pages; section context retained; accurate Markdown table counts including fenced code.');

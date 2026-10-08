@@ -8,7 +8,7 @@ import { useLanguage } from '@/components/language';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { buildChunks, findings, type PreparedDocument } from '@/lib/documents';
+import { buildChunks, findings, knowledgeReadiness, type PreparedDocument } from '@/lib/documents';
 import { makeLocalizedSample } from '@/lib/sample';
 import { localizedMarkdown, localizedPackage } from '@/lib/exports';
 import { downloadFile } from '@/lib/download';
@@ -20,32 +20,32 @@ const phases = [
 type Phase = typeof phases[number]['id'];
 const words = {
   en: {
-    labels: ['Extract', 'Review', 'Chunks', 'Export'], sample: 'SAMPLE WALKTHROUGH', original: 'Original text',
+    labels: ['Extract', 'Analyze', 'Optimize', 'Export'], sample: 'SAMPLE WALKTHROUGH', original: 'Original text',
     sections: 'Document sections', extracted: 'Extracted text, organised by section.', characters: 'characters',
     review: 'Check the text and document version.', version: 'Document version', editor: 'Edit extracted text',
     checks: 'Review checks', approved: 'I have compared the output with the source.',
-    max: 'Maximum chunk size', merge: 'Merge identical sections', chunk: 'Chunk', source: 'Source',
+    max: 'Maximum chunk size', merge: 'Merge identical sections', chunk: 'Chunk', chunkCount: 'chunks', source: 'Source',
     chunks: 'Chunks generated from the current text.', export: 'Download the reviewed document.',
     excerpt: 'JSON excerpt', downloadJson: 'Register for JSON', downloadMd: 'Download Markdown',
     notReviewed: 'Confirm your review to enable downloads.', blocked: 'Add a document title and fix empty sections before downloading.',
     paused: 'Paused', playing: 'Walkthrough playing', play: 'Play walkthrough', pause: 'Pause walkthrough', reset: 'Reset sample',
     previous: 'Previous chunk', next: 'Next chunk', opened: 'Try the sample',
-    footnote: 'This is an editable sample. Changes update the chunks and downloaded files.',
+    footnote: 'This is an editable sample. Changes update the chunks and downloaded files. Switching the UI language preserves your edits; Reset sample loads a fresh example in that language.',
     modified: 'Edited', downloaded: 'Downloaded', copy: 'Source references are included in both formats.',
     caption: ['Select a section to see its source text.', 'Edits clear the previous review approval.', 'Change the size to see the text split into smaller chunks.', 'Downloads contain the full document, metadata, and source references.'],
   },
   id: {
-    labels: ['Ekstraksi', 'Tinjau', 'Chunk', 'Ekspor'], sample: 'ALUR DOKUMEN CONTOH', original: 'Teks awal',
+    labels: ['Ekstrak', 'Analisis', 'Rapikan', 'Export'], sample: 'ALUR DOKUMEN CONTOH', original: 'Teks awal',
     sections: 'Bagian dokumen', extracted: 'Teks ekstraksi dikelompokkan per bagian.', characters: 'karakter',
     review: 'Periksa teks dan versi dokumen.', version: 'Versi dokumen', editor: 'Edit teks ekstraksi',
     checks: 'Catatan pemeriksaan', approved: 'Saya sudah membandingkan hasil dengan sumber.',
-    max: 'Ukuran maksimal chunk', merge: 'Gabungkan bagian identik', chunk: 'Chunk', source: 'Sumber',
+    max: 'Ukuran maksimal chunk', merge: 'Gabungkan bagian identik', chunk: 'Chunk', chunkCount: 'chunk', source: 'Sumber',
     chunks: 'Chunk dibentuk dari teks yang sedang ditampilkan.', export: 'Unduh dokumen yang sudah diperiksa.',
     excerpt: 'Cuplikan JSON', downloadJson: 'Daftar untuk JSON', downloadMd: 'Unduh Markdown',
     notReviewed: 'Konfirmasi pemeriksaanmu untuk mengaktifkan unduhan.', blocked: 'Isi judul dokumen dan perbaiki bagian kosong sebelum mengunduh.',
     paused: 'Dijeda', playing: 'Alur sedang diputar', play: 'Putar alur', pause: 'Jeda alur', reset: 'Pulihkan contoh',
     previous: 'Chunk sebelumnya', next: 'Chunk selanjutnya', opened: 'Coba workspace contoh',
-    footnote: 'Contoh ini bisa diedit. Perubahan langsung diterapkan pada chunk dan file yang diunduh.',
+    footnote: 'Contoh ini bisa diedit. Perubahan langsung diterapkan pada chunk dan file yang diunduh. Ganti bahasa UI tetap menjaga edit; Pulihkan contoh memuat contoh baru dalam bahasa tersebut.',
     modified: 'Diedit', downloaded: 'Berhasil diunduh', copy: 'Kedua format menyertakan referensi sumber.',
     caption: ['Pilih bagian untuk melihat teks sumbernya.', 'Perubahan membatalkan persetujuan pemeriksaan sebelumnya.', 'Ubah ukurannya untuk membagi teks menjadi chunk yang lebih kecil.', 'Unduhan berisi dokumen lengkap, metadata, dan referensi sumber.'],
   },
@@ -77,9 +77,7 @@ export function ProductDemo() {
   const phaseIndex = phases.findIndex(item => item.id === phase);
   const active = playing && visible && !reducedMotion;
 
-  useEffect(() => { setChunkIndex(index => Math.min(index, Math.max(0, chunks.length - 1))); }, [chunks.length]);
 
-  useEffect(() => { setSample(makeLocalizedSample(locale)); setNotice(''); setUnitIndex(2); setChunkIndex(2); }, [locale]);
   useEffect(() => {
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => { setReducedMotion(preference.matches); if (preference.matches) setPlaying(false); };
@@ -124,14 +122,14 @@ export function ProductDemo() {
   return <div className="product-demo live-demo" ref={root} data-playing={active}>
     <div className="demo-topbar"><Brand compact/><span className="demo-top-label">Database-Recovery.md</span><span className="demo-preview-label">{copy.sample}</span></div>
     <Tabs value={phase} onValueChange={select} className="demo-tabs">
-      <div className="demo-toolbar"><TabsList className="demo-phase-list" aria-label={t('Tahapan demo produk')} onFocusCapture={pause}>
+      <div className="demo-readiness-strip"><span>{locale==='en'?'Readiness from this sample':'Kesiapan dari contoh ini'}</span><strong>{knowledgeReadiness(sample,chunks).score}/100</strong><span>{sample.approved?(locale==='en'?'Reviewed by you':'Ditinjau oleh kamu'):(locale==='en'?'Review required':'Perlu review')}</span></div><div className="demo-toolbar"><TabsList className="demo-phase-list" aria-label={t('Tahapan demo produk')} onFocusCapture={pause}>
         {phases.map((item, index) => <TabsTrigger value={item.id} key={item.id}><span className="demo-phase-number">0{index + 1}</span><item.icon size={16}/><span>{copy.labels[index]}</span></TabsTrigger>)}
       </TabsList><button className="demo-play-control" disabled={reducedMotion} aria-label={playing ? copy.pause : copy.play} title={playing ? copy.pause : copy.play} onClick={() => { if (!playing && phase === 'export') setPhase('extract'); setPlaying(value => !value); }}>{playing && !reducedMotion ? <Pause size={16}/> : <Play size={16}/>}</button><button className="demo-play-control live-reset" aria-label={copy.reset} title={copy.reset} onClick={reset}><RotateCcw size={16}/></button></div>
       <div className="live-body">
         <div className="live-source">
           <div className="live-panel-heading"><FileText size={16}/><span>{copy.original}</span><code>{focusedUnit.id}</code></div>
           <div className="live-section-picker" aria-label={copy.sections}>{sample.units.map((unit, index) => <button key={unit.id} aria-pressed={focusedUnit.id === unit.id} onClick={() => { pause(); setUnitIndex(index); if (phase === 'chunks') setChunkIndex(Math.max(0, chunks.findIndex(chunk => chunk.sources.some(source => source.unitId === unit.id)))); }}><span>0{index + 1}</span>{unit.title}</button>)}</div>
-          <pre className="live-original" key={focusedUnit.id}>{focusedUnit.original}</pre>
+          <pre tabIndex={0} className="live-original" key={focusedUnit.id}>{focusedUnit.original}</pre>
           <div className="live-source-footer"><span>{focusedUnit.original.length} {copy.characters}</span><span>{sample.name}</span></div>
         </div>
         <div className="live-output">
@@ -142,22 +140,22 @@ export function ProductDemo() {
           </TabsContent>
           <TabsContent value="review" className="live-content">
             <div className="live-heading"><span className="demo-symbol"><ShieldCheck size={20}/></span><h3>{copy.review}</h3></div>
-            <label className="live-field"><span>{copy.version}</span><input disabled value={sample.version} placeholder="v1.0" onFocus={pause} onChange={event => patch({ version: event.target.value })}/></label>
+            <label className="live-field"><span>{copy.version}</span><input value={sample.version} placeholder="v1.0" onFocus={pause} onChange={event => patch({ version: event.target.value })}/></label>
             <label className="live-field"><span>{copy.editor}<code>{focusedUnit.id}</code></span><textarea value={focusedUnit.text} onFocus={pause} onChange={event => patch({ units: sample.units.map(unit => unit.id === focusedUnit.id ? { ...unit, text: event.target.value } : unit) })}/></label>
             <div className="live-checks" aria-label={copy.checks}>{checks.map(check => <div key={check.id} data-severity={check.severity}><InfoMark warning={check.severity !== 'info'}/><span>{t(check.title)}</span></div>)}</div>
             {approval}
           </TabsContent>
           <TabsContent value="chunks" className="live-content">
-            <div className="live-heading"><span className="demo-symbol"><Layers size={20}/></span><div><h3>{chunks.length} {copy.labels[2].toLowerCase()}</h3><p>{copy.chunks}</p></div></div>
-            <div className="live-chunk-controls"><label id="demo-chunk-size">{copy.max}</label><Select value={size} disabled onValueChange={value => { pause(); setSize(value); setChunkIndex(0); setSample(previous => ({ ...previous, approved: false })); setNotice(''); }}><SelectTrigger aria-labelledby="demo-chunk-size" onFocus={pause}><SelectValue/></SelectTrigger><SelectContent>{['200', '400', '1000', '2000'].map(value => <SelectItem key={value} value={value}>{Number(value).toLocaleString(locale === 'en' ? 'en-US' : 'id-ID')} {copy.characters}</SelectItem>)}</SelectContent></Select></div>
-            <label className="live-deduplicate"><Checkbox checked={merge} disabled onCheckedChange={value => { pause(); setMerge(value === true); setSample(previous => ({ ...previous, approved: false })); setNotice(''); }}/><span>{copy.merge}</span></label>
-            {focusedChunk ? <article className="live-chunk" key={focusedChunk.id}><div><strong>{copy.chunk} {Math.min(chunkIndex, chunks.length - 1) + 1} / {chunks.length}</strong><span>{focusedChunk.edited && copy.modified}</span></div><pre>{focusedChunk.text}</pre><footer><span>{copy.source}</span>{focusedChunk.sources.map(source => <button key={source.unitId} onClick={() => { pause(); setUnitIndex(sample.units.findIndex(unit => unit.id === source.unitId)); setPhase('review'); }}>{source.unitId}</button>)}</footer></article> : <p className="live-empty">{t('Belum ada chunk yang bisa digunakan.')}</p>}
+            <div className="live-heading"><span className="demo-symbol"><Layers size={20}/></span><div><h3>{chunks.length} {copy.chunkCount}</h3><p>{copy.chunks}</p></div></div>
+            <div className="live-chunk-controls"><label id="demo-chunk-size">{copy.max}</label><Select value={size} onValueChange={value => { pause(); setSize(value); setChunkIndex(0); setSample(previous => ({ ...previous, approved: false })); setNotice(''); }}><SelectTrigger aria-labelledby="demo-chunk-size" onFocus={pause}><SelectValue/></SelectTrigger><SelectContent>{['200', '400', '1000', '2000'].map(value => <SelectItem key={value} value={value}>{Number(value).toLocaleString(locale === 'en' ? 'en-US' : 'id-ID')} {copy.characters}</SelectItem>)}</SelectContent></Select></div>
+            <label className="live-deduplicate"><Checkbox checked={merge} onCheckedChange={value => { pause(); setMerge(value === true); setSample(previous => ({ ...previous, approved: false })); setNotice(''); }}/><span>{copy.merge}</span></label>
+            {focusedChunk ? <article className="live-chunk" key={focusedChunk.id}><div><strong>{copy.chunk} {Math.min(chunkIndex, chunks.length - 1) + 1} / {chunks.length}</strong><span>{focusedChunk.edited && copy.modified}</span></div><pre tabIndex={0}>{focusedChunk.text}</pre><footer><span>{copy.source}</span>{focusedChunk.sources.map(source => <button key={source.unitId} onClick={() => { pause(); setUnitIndex(sample.units.findIndex(unit => unit.id === source.unitId)); setPhase('review'); }}>{source.unitId}</button>)}</footer></article> : <p className="live-empty">{t('Belum ada chunk yang bisa digunakan.')}</p>}
             <div className="live-chunk-navigation"><button aria-label={copy.previous} disabled={!chunks.length || chunkIndex <= 0} onClick={() => { pause(); setChunkIndex(index => Math.max(0, index - 1)); }}><ChevronLeft size={16}/></button><span>{Math.min(chunkIndex + 1, chunks.length)} / {chunks.length}</span><button aria-label={copy.next} disabled={!chunks.length || chunkIndex >= chunks.length - 1} onClick={() => { pause(); setChunkIndex(index => Math.min(chunks.length - 1, index + 1)); }}><ChevronRight size={16}/></button></div>
           </TabsContent>
           <TabsContent value="export" className="live-content">
             <div className="live-heading"><span className="demo-symbol"><Braces size={20}/></span><h3>{copy.export}</h3></div>
-            <div className="live-export-summary"><span>{chunks.length} {copy.labels[2].toLowerCase()}</span><span>{sample.units.length} {copy.sections.toLowerCase()}</span></div>
-            <pre className="live-json" aria-label={copy.excerpt}><code>{excerpt}</code></pre>
+            <div className="live-export-summary"><span>{chunks.length} {copy.chunkCount}</span><span>{sample.units.length} {copy.sections.toLowerCase()}</span></div>
+            <pre tabIndex={0} className="live-json" aria-label={copy.excerpt}><code>{excerpt}</code></pre>
             {approval}
             <div className="live-downloads"><Link className="button primary" href="/register">{copy.downloadJson}</Link><button className="button outline" disabled={!sample.approved || blocked} onClick={() => exportSample()}><Download size={15}/>{copy.downloadMd}</button></div>
             <p className="live-export-help">{blocked ? copy.blocked : sample.approved ? copy.copy : copy.notReviewed}</p>

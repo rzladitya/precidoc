@@ -2,6 +2,14 @@ export type Locale = 'en' | 'id';
 
 // UI copy only. Uploaded document text and headings are never translated.
 export const english: Record<string, string> = {
+  'Ketahui apa yang perlu diperbaiki.': 'Know what needs attention.',
+  'Lihat skor kesiapan, teks kosong, metadata, dan duplikasi. Setiap pemeriksaan menunjukkan batasan dan langkah berikutnya.': 'Inspect readiness, empty sources, metadata and duplicates. Every check explains its limits and the next step.',
+  'Pemeriksaan yang transparan': 'Explainable checks',
+  'Rapikan konteksnya.': 'Refine the context.',
+  'Periksa sumber, edit teks, lengkapi metadata, dan atur chunk. Gabungkan bagian identik dengan referensi tetap terhubung.': 'Review sources, edit text, complete metadata and configure chunks. Merge identical sections while preserving their references.',
+  'Bawa hasil yang bisa ditelusuri.': 'Export traceable knowledge.',
+  'Unduh JSON atau Markdown dengan skor, metadata, dan sumber. Kamu yang meninjau dan menyetujui sebelum export.': 'Download JSON or Markdown with readiness, metadata and sources. You review and approve before exporting.',
+
   'Document workspace': 'Document workspace', 'Beranda Precidoc': 'Precidoc home', 'Tentang Precidoc': 'About Precidoc',
   'Produk': 'Product', 'Fitur': 'Features', 'Cara kerja': 'How it works', 'Bahasa': 'Language',
   'Buka workspace': 'Open workspace', 'Buka workspace Precidoc': 'Open Precidoc',
