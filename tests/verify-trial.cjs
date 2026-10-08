@@ -77,7 +77,7 @@ async function mount(component,props){await act(async()=>{root.render(React.crea
  await click(document.querySelector('[aria-label="Remove document from this tab"]'));await upload([new File(['Replacement'],'replacement.txt')]);assert.equal(document.querySelectorAll('.document-item').length,1);
  await act(async()=>{root.render(null);await tick();});
  await mount(Registration,{user:null,signInHref:'/auth/sign-in?returnTo=%2Fregister'});
- const signIn=[...document.querySelectorAll('a')].find(a=>a.textContent==='Sign in with email and password');assert.equal(signIn.getAttribute('target'),'_top');assert(signIn.getAttribute('href').startsWith('/auth/sign-in'));
+ assert.equal(document.querySelector('h1').textContent,'Create your account');assert.equal(document.querySelectorAll('input').length,3);assert(document.querySelector('.account-art'));assert(document.querySelector('.account-switch').textContent.includes('Sign in'));
  await act(async()=>{root.render(null);await tick();});
  let posted,redirected;
  globalThis.fetch=async (url,options)=>{posted={url,options};return Response.json({account:{name:'Trial user',email:'verified@example.test'}});};
@@ -90,7 +90,7 @@ async function mount(component,props){await act(async()=>{root.render(React.crea
  await act(async()=>{root.render(null);await tick();});
  await mount(AuthForm,{});
  assert(!document.body.textContent.includes('Google'));
- await click(button('Create a new login'));
+ await click(button('Create an account'));
  await change(document.querySelector('input'),'Test User');
  await change(document.querySelector('input[type=email]'),'test@example.test');
  await change(document.querySelector('input[type=password]'),'password-test');

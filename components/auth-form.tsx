@@ -1,10 +1,15 @@
 "use client";
 import { useState } from 'react';
+import { AccountShell } from './account-shell';
+import { useLanguage } from './language';
 import Link from 'next/link';
 import { authClient } from '@/lib/auth/client';
 
-export function AuthForm() {
-  const [signup, setSignup] = useState(false);
+export function AuthForm({ initialSignup = false }: { initialSignup?: boolean }) {
+  const { locale } = useLanguage();
+  const en = locale === 'en';
+  const text = (english: string, indonesian: string) => en ? english : indonesian;
+  const [signup, setSignup] = useState(initialSignup);
   const [verifying, setVerifying] = useState(false);
   const [otp, setOtp] = useState('');
   const [email, setEmail] = useState('');
@@ -51,21 +56,26 @@ export function AuthForm() {
     } catch { setMessage('Could not send a new code. Please try again.'); }
     finally { setBusy(false); }
   }
-  return <main className="account-page"><section className="account-form-panel" style={{ maxWidth: 480, margin: '48px auto' }}>
-    <h1>{verifying ? 'Verify your email' : signup ? 'Create your Precidoc login' : 'Sign in to Precidoc'}</h1>
+  return <AccountShell>
+    <div className="account-switch"><span>{signup ? text('Already have an account?', 'Sudah punya akun?') : text('New to Precidoc?', 'Baru di Precidoc?')}</span><button type="button" disabled={busy} onClick={() => { setSignup(!signup); setVerifying(false); setOtp(''); setMessage(''); }}>{signup ? text('Sign in', 'Masuk') : text('Create an account', 'Buat akun')}</button></div>
+    <span className="account-eyebrow">PRECIDOC WORKSPACE</span>
+    <h1>{verifying ? text('Verify your email', 'Verifikasi email') : signup ? text('Create your account', 'Buat akun kamu') : text('Welcome back', 'Selamat datang kembali')}</h1>
+    <p>{verifying ? text('One more step to your document workspace.', 'Satu langkah lagi menuju workspace dokumen kamu.') : signup ? text('Turn your documents into knowledge worth using.', 'Siapkan dokumen menjadi pengetahuan yang berguna.') : text('Continue preparing your documents for AI.', 'Lanjutkan persiapan dokumen kamu untuk AI.')}</p>
     {verifying ? <form onSubmit={verify}>
-      <p>Enter the verification code sent to {email}.</p>
-      <label>Verification code<input required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} disabled={busy}/></label>
-      <button className="button primary" type="submit" disabled={busy}>{busy ? 'Verifying…' : 'Verify email'}</button>
-      <button className="button outline" type="button" onClick={resend} disabled={busy}>Resend code</button>
+      <p>{text('Enter the verification code sent to', 'Masukkan kode verifikasi yang dikirim ke')} {email}.</p>
+      <label>{text('Verification code', 'Kode verifikasi')}<input required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} disabled={busy}/></label>
+      <button className="button primary" type="submit" disabled={busy}>{busy ? text('Verifying…', 'Memverifikasi…') : text('Verify email', 'Verifikasi email')}</button>
+      <button className="button outline" type="button" onClick={resend} disabled={busy}>{text('Resend code', 'Kirim ulang kode')}</button>
     </form> : <form onSubmit={submit}>
-      {signup && <label>Name<input required minLength={2} maxLength={80} value={name} onChange={e => setName(e.target.value)} autoComplete="name" disabled={busy}/></label>}
+      {signup && <label>{text('Name', 'Nama')}<input required minLength={2} maxLength={80} value={name} onChange={e => setName(e.target.value)} autoComplete="name" disabled={busy}/></label>}
       <label>Email<input required type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" disabled={busy}/></label>
-      <label>Password<input required type="password" minLength={8} maxLength={128} value={password} onChange={e => setPassword(e.target.value)} autoComplete={signup ? 'new-password' : 'current-password'} disabled={busy}/></label>
-      <button className="button primary" type="submit" disabled={busy}>{busy ? 'Please wait…' : signup ? 'Create login' : 'Sign in'}</button>
+      <label>{text('Password', 'Kata sandi')}<input required type="password" minLength={8} maxLength={128} value={password} onChange={e => setPassword(e.target.value)} autoComplete={signup ? 'new-password' : 'current-password'} disabled={busy}/></label>
+      {signup && <small className="account-identity-note">{text('Use at least 8 characters. We’ll email you a verification code.', 'Gunakan minimal 8 karakter. Kami akan mengirim kode verifikasi melalui email.')}</small>}
+      <button className="button primary" type="submit" disabled={busy}>{busy ? text('Please wait…', 'Tunggu sebentar…') : signup ? text('Create login', 'Buat akun') : text('Sign in', 'Masuk')}</button>
     </form>}
-    {message && <p role="alert">{message}</p>}
-    <button className="button outline" onClick={() => { setVerifying(false); setOtp(''); setSignup(verifying ? false : !signup); setMessage(''); }} disabled={busy}>{verifying ? 'Back to sign in' : signup ? 'Already have a login? Sign in' : 'Create a new login'}</button>
-    <p><Link href="/sample">Try Precidoc without signing in</Link></p>
-  </section></main>;
+    {message && <p className="account-error" role="alert">{message}</p>}
+    {verifying && <button className="button outline" onClick={() => { setVerifying(false); setOtp(''); setSignup(false); setMessage(''); }} disabled={busy}>{text('Back to sign in', 'Kembali ke login')}</button>}
+    <p className="account-privacy">{text('Your documents stay in your browser. Export your work before closing the tab.', 'Dokumen tetap di browser kamu. Unduh hasil sebelum menutup tab.')}</p>
+    <Link className="account-sample-link" href="/sample">{text('Try Precidoc without signing in', 'Coba Precidoc tanpa masuk')}</Link>
+  </AccountShell>;
 }

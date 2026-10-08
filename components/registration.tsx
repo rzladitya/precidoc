@@ -1,9 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Check, LoaderCircle, ShieldCheck } from 'lucide-react';
-import { Brand } from '@/components/brand';
-import { LanguageSwitch, useLanguage } from '@/components/language';
+import { LoaderCircle } from 'lucide-react';
+import { AccountShell } from './account-shell';
+import { AuthForm } from './auth-form';
+import { useLanguage } from '@/components/language';
 
 const wording = {
   en: {
@@ -31,7 +32,7 @@ const wording = {
 };
 
 export function Registration({ user, signInHref, unavailable = false }: { user: { email: string; name: string } | null; signInHref: string; unavailable?: boolean }) {
-  const { locale, t } = useLanguage();
+  const { locale } = useLanguage();
   const copy = wording[locale];
   const [name, setName] = useState(user?.name ?? '');
   const [busy, setBusy] = useState(false);
@@ -53,16 +54,12 @@ export function Registration({ user, signInHref, unavailable = false }: { user: 
     finally { setBusy(false); }
   }
   const errorMessage = error === 'invalid_name' ? copy.invalid : error === 'sign_in_required' ? copy.signin : error === 'account_unavailable' ? copy.unavailable : copy.error;
-  return <div className="account-page">
-    <header className="workspace-header"><Link href="/" aria-label={t('Beranda Precidoc')}><Brand/></Link><LanguageSwitch/></header>
-    <main className="account-layout">
-      <section className="account-form-panel"><span className="account-symbol"><ShieldCheck size={24}/></span><h1>{copy.title}</h1><p>{copy.intro}</p>
+  if (!user && !unavailable) return <AuthForm initialSignup/>;
+  return <AccountShell>
+    <span className="account-eyebrow">PRECIDOC WORKSPACE</span><h1>{locale === 'en' ? 'Make it your workspace' : 'Lengkapi akun kamu'}</h1><p>{locale === 'en' ? 'Confirm your name to start preparing documents.' : 'Konfirmasi nama kamu untuk mulai menyiapkan dokumen.'}</p>
         {unavailable ? <div className="account-error" role="alert"><p>{copy.unavailable}</p><button className="button outline" onClick={() => window.location.reload()}>{copy.retry}</button></div>
           : !user || signInRequired ? <div className="account-signin"><p>{signInRequired ? copy.signin : copy.identity}</p><a className="button primary" href={signInHref} target="_top">{copy.continue}</a></div>
           : <form onSubmit={register}><label><span>{copy.name}</span><input required minLength={2} maxLength={80} autoComplete="name" value={name} onChange={event => setName(event.target.value)} disabled={busy}/></label><label><span>{copy.email}</span><input type="email" value={user.email} readOnly aria-readonly="true"/></label><p className="account-identity-note">{copy.already}</p>{error && <div className="account-error" role="alert">{errorMessage}</div>}<button className="button primary" type="submit" disabled={busy}>{busy && <LoaderCircle size={17} className="spin"/>}{busy ? copy.saving : copy.submit}</button></form>}
         <Link className="account-sample-link" href="/sample">{copy.sample}</Link>
-      </section>
-      <aside className="account-benefits"><h2>{t('Document workspace')}</h2><ul>{copy.features.map(feature => <li key={feature}><Check size={17}/><span>{feature}</span></li>)}</ul><p>{copy.note}</p></aside>
-    </main>
-  </div>;
+  </AccountShell>;
 }

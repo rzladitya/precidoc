@@ -5,5 +5,5 @@ import './theme.css';
 import './demo.css';
 import './account.css';
 import { LanguageProvider } from '@/components/language';
-export const metadata:Metadata={title:'Precidoc — Document preparation for AI / RAG',description:'Extract, review, and prepare documents for your knowledge base, with source references attached.',icons:{icon:'/favicon.svg',shortcut:'/favicon.svg'}};
+export const metadata:Metadata={title:'Prepare Documents for AI | Precidoc',description:'Extract, review, and prepare documents for your knowledge base, with source references attached.',icons:{icon:'/favicon.svg',shortcut:'/favicon.svg'}};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body><LanguageProvider>{children}</LanguageProvider></body></html>}

@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+export const metadata: Metadata = { title: 'Create an Account | Precidoc' };
 import { redirect } from 'next/navigation';
 import { getUser, signInPath } from '@/app/auth';
 import { findAccount } from '@/db/accounts';
