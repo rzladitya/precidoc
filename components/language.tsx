@@ -1,8 +1,6 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Languages } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { translate, type Locale } from '@/lib/i18n';
 
 const LanguageContext = createContext<{locale: Locale; ready: boolean; setLocale: (locale: Locale) => void; t: (message: string) => string}>({locale:'en',ready:false,setLocale:()=>{},t:message=>translate(message,'en')});
@@ -32,5 +30,5 @@ export function LanguageProvider({children}:{children:React.ReactNode}) {
 export function useLanguage(){return useContext(LanguageContext);}
 export function LanguageSwitch(){
   const {locale,setLocale}=useLanguage();
-  return <Select value={locale} onValueChange={value=>{if(value==='en'||value==='id')setLocale(value);}}><SelectTrigger className="language-switch" aria-label={locale==='en'?'Language':'Bahasa'}><Languages size={16}/><SelectValue>{locale==='en'?'English':'Indonesia'}</SelectValue></SelectTrigger><SelectContent><SelectItem value="en">English</SelectItem><SelectItem value="id">Bahasa Indonesia</SelectItem></SelectContent></Select>;
+  return <div className="language-switch" role="group" aria-label={locale === 'en' ? 'Language' : 'Bahasa'}><span className={`language-switch-active ${locale === 'id' ? 'is-id' : ''}`} aria-hidden="true"/>{(['en', 'id'] as const).map(language => <button key={language} type="button" aria-label={language === 'en' ? 'English' : 'Bahasa Indonesia'} aria-pressed={locale === language} onClick={() => setLocale(language)}>{language.toUpperCase()}</button>)}</div>;
 }
