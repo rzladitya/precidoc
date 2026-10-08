@@ -1,0 +1,81 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import {createRequire} from 'node:module';
+import ts from 'typescript';
+import {DOMParser} from 'linkedom';
+const pdfRequire=createRequire(import.meta.resolve('pdfjs-dist'));
+const {DOMMatrix,Path2D,ImageData}=pdfRequire('@napi-rs/canvas');
+// Browser DOMParser wraps HTML fragments in a body; linkedom requires the shell explicitly.
+class BrowserDOMParser extends DOMParser {
+  parseFromString(value,type){return super.parseFromString(type==='text/html'?`<!doctype html><html><head></head><body>${value}</body></html>`:value,type)}
+}
+Object.assign(globalThis,{DOMParser:BrowserDOMParser,DOMMatrix,Path2D,ImageData});
+const source=fs.readFileSync('lib/documents.ts','utf8').replace("'/pdf.worker.min.mjs'",JSON.stringify(path.resolve('public/pdf.worker.min.mjs'))).replace("'/pdfjs/cmaps/'",JSON.stringify(path.resolve('public/pdfjs/cmaps')+'/')).replace("'/pdfjs/standard_fonts/'",JSON.stringify(path.resolve('public/pdfjs/standard_fonts')+'/'));
+fs.mkdirSync('.sites-runtime',{recursive:true});
+fs.writeFileSync('.sites-runtime/documents-test.mjs',ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText);
+const d=await import('../.sites-runtime/documents-test.mjs');
+const policySource=fs.readFileSync('lib/workspace-policy.ts','utf8');
+fs.writeFileSync('.sites-runtime/policy-test.mjs',ts.transpileModule(policySource,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText);
+const {TRIAL_POLICY,FULL_POLICY}=await import('../.sites-runtime/policy-test.mjs');
+function paginatedPdf(count){
+  const objects=['<< /Type /Catalog /Pages 2 0 R >>',`<< /Type /Pages /Kids [${Array.from({length:count},(_,i)=>`${4+i*2} 0 R`).join(' ')}] /Count ${count} >>`,'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
+  for(let i=0;i<count;i++){
+    const text=`BT /F1 12 Tf 72 720 Td (Page ${i+1}) Tj ET`;
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5+i*2} 0 R >>`,`<< /Length ${text.length} >>\nstream\n${text}\nendstream`);
+  }
+  let pdf='%PDF-1.4\n';const offsets=[0];
+  objects.forEach((object,i)=>{offsets.push(Buffer.byteLength(pdf));pdf+=`${i+1} 0 obj\n${object}\nendobj\n`;});
+  const xref=Buffer.byteLength(pdf);
+  pdf+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n${offsets.slice(1).map(n=>`${String(n).padStart(10,'0')} 00000 n \n`).join('')}trailer\n<< /Size ${objects.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return new File([pdf],`${count}-pages.pdf`,{type:'application/pdf'});
+}
+const trialPdf=await d.parseFile(paginatedPdf(20),()=>{},TRIAL_POLICY);
+assert.equal(trialPdf.units.length,20);
+await assert.rejects(d.parseFile(paginatedPdf(21),()=>{},TRIAL_POLICY),/Maksimal 20 halaman/);
+const fullPdf=await d.parseFile(paginatedPdf(21),()=>{},FULL_POLICY);
+assert.equal(fullPdf.units.length,21);
+await assert.rejects(d.parseFile(new File(['x'.repeat(TRIAL_POLICY.maxBytes+1)],'large.txt'),()=>{},TRIAL_POLICY),/ukuran maksimal 5 MB/);
+const longText=new File(['x'.repeat(TRIAL_POLICY.maxCharacters+1)],'long.txt');
+await assert.rejects(d.parseFile(longText,()=>{},TRIAL_POLICY),/Dokumen terlalu panjang/);
+const fullText=await d.parseFile(longText,()=>{},FULL_POLICY);
+assert.equal(fullText.units[0].text.length,TRIAL_POLICY.maxCharacters+1);
+for(const doc of [trialPdf,fullPdf,fullText])if(doc.objectUrl)URL.revokeObjectURL(doc.objectUrl);
+const sample=d.makeSample();
+assert.equal(sample.units.length,3);
+assert.equal(sample.units.reduce((n,u)=>n+u.tableCount,0),1);
+assert(d.findings(sample).some(f=>f.id==='version'));
+assert(!d.findings({...sample,version:'v1.0'}).some(f=>f.id==='version'));
+const chunks=d.buildChunks(sample,2000,true);
+assert.equal(chunks.length,3);
+assert(chunks[2].text.includes('| Replication lag | 30 detik |'));
+assert.equal(chunks[2].sources[0].unitId,'section_03');
+const duplicate={...sample,id:'duplicate',units:[sample.units[0],{...sample.units[0],id:'section_04'}]};
+assert.equal(d.buildChunks(duplicate,2000,true).length,1);
+assert.equal(d.buildChunks(duplicate,2000,true)[0].sources.length,2);
+assert.equal(d.buildChunks(duplicate,2000,false).length,2);
+const multi={...sample.units[0],text:'x'.repeat(550),original:'x'.repeat(550)};
+const duplicateMulti={...sample,units:[multi,{...multi,id:'dupe'},sample.units[1]]};
+const split=d.buildChunks(duplicateMulti,200,true);
+assert.equal(split.length,3+d.splitText(sample.units[1].text,200).length);
+assert(split.slice(0,3).every(c=>c.sources.length===2));
+assert(split.slice(3).every(c=>c.sources.length===1));
+const edited={...sample,approved:true,units:sample.units.map((u,i)=>i===0?{...u,text:u.text+'\nOperator verified.'}:u)};
+assert(d.buildChunks(edited)[0].edited);
+assert(d.makePackage(edited,d.buildChunks(edited)).document.sourceUnits[0].edited);
+assert(d.markdownExport(edited,d.buildChunks(edited)).includes('Teks telah diedit pengguna'));
+assert(d.findings({...sample,title:''}).some(f=>f.severity==='blocker'));
+assert(d.findings({...sample,units:[{...sample.units[0],text:''}]}).some(f=>f.severity==='blocker'));
+assert(d.splitText('abc '.repeat(1200),1000).every(t=>t.length<=1000));
+await assert.rejects(d.parseFile(new File(['test'],'bad.exe'),()=>{}),/gunakan PDF/);
+await assert.rejects(d.parseFile(new File([],'empty.txt'),()=>{}),/file kosong/);
+const parsedText=await d.parseFile(new File(['# Heading\n\nIsi Indonesia 日本語.\n\n## Next\n\nSection two.'],'test.md'),()=>{});
+assert.equal(parsedText.units.length,2);assert(parsedText.units[0].text.includes('日本語'));assert.equal(parsedText.hash.length,64);
+const pdf=await d.parseFile(new File([fs.readFileSync('tests/fixtures/digital.pdf')],'digital.pdf',{type:'application/pdf'}),()=>{});
+assert.equal(pdf.units.length,1);assert(pdf.units[0].text.includes('Database recovery'));assert.equal(pdf.units[0].page,1);
+const scanned=await d.parseFile(new File([fs.readFileSync('tests/fixtures/blank.pdf')],'scan.pdf',{type:'application/pdf'}),()=>{});
+assert.equal(d.buildChunks(scanned).length,0);assert(d.findings(scanned).some(f=>f.severity==='blocker'));
+const word=await d.parseFile(new File([fs.readFileSync('tests/fixtures/runbook.docx')],'runbook.docx'),()=>{});
+assert.equal(word.units.length,2);assert.equal(word.units[1].tableCount,1);assert(word.units[1].text.includes('| Replication lag | 30 seconds |'));assert.equal(word.units[1].title,'Procedure');
+for(const doc of [parsedText,pdf,scanned,word])URL.revokeObjectURL(doc.objectUrl);
+console.log('Passed: Markdown, real PDF and DOCX extraction; trial PDF, size and character boundaries; full-workspace limits; blank PDF blocking; chunk boundaries; duplicate provenance; metadata checks; edited-source export; file validation.');
