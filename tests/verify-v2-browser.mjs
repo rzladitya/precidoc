@@ -4,7 +4,7 @@ import path from 'node:path';
 import {chromium} from 'playwright-core';
 import AxeBuilder from '@axe-core/playwright';
 const base=process.env.PRECIDOC_TEST_URL??'http://127.0.0.1:3000';
-const out=path.resolve('outputs/precidoc-v2-2026-10-12');fs.mkdirSync(out,{recursive:true});
+const out=path.resolve(process.env.PRECIDOC_TEST_OUTPUT??'outputs/precidoc-checklist-2026-10-12');fs.mkdirSync(out,{recursive:true});
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH??'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
 const results={views:[],flows:[],errors:[]};
 try{

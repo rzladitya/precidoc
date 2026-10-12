@@ -100,7 +100,7 @@ export async function deliverAuthEmail(request: Request) {
     const sent = await fetch('https://api.resend.com/emails', {
       method: 'POST', redirect: 'error', signal: AbortSignal.timeout(6500),
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'Idempotency-Key': `precidoc-auth/${payload.event_id}` },
-      body: JSON.stringify({ from: 'Precidoc <noreply@rainc.web.id>', to: [payload.user.email], ...email }),
+      body: JSON.stringify({ from: 'Precidoc <noreply@rainc.tech>', to: [payload.user.email], ...email }),
     });
     if (!sent.ok) { console.error('Auth email provider unavailable', sent.status); throw new Unavailable(); }
     const receipt = await sent.json() as { id?: string };

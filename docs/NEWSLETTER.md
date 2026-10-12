@@ -10,6 +10,6 @@ Prepare an update file with `url` pointing to `https://precidoc.rainc.tech` and 
 NODE_USE_ENV_PROXY=1 node --env-file-if-exists=.env.local scripts/send-product-update.mjs --message-file=/path/to/update.json
 ```
 
-This prints counts and sends nothing. After the owner explicitly requests sending that update, add `--send`. The script uses the configured Resend API key and the verified `Precidoc <noreply@rainc.web.id>` sender. Provider quotas still apply; API acceptance does not establish inbox delivery. Sending is manual, not triggered by every deployment or blog edit. Keep subscriber data and unsubscribe tokens out of logs and Git.
+This prints counts and sends nothing. After the owner explicitly requests sending that update, add `--send`. The script uses the configured Resend API key and the verified `Precidoc <noreply@rainc.tech>` sender. Provider quotas still apply; API acceptance does not establish inbox delivery. Sending is manual, not triggered by every deployment or blog edit. Keep subscriber data and unsubscribe tokens out of logs and Git.
 
 Each update includes an unsubscribe link. Opening it shows a confirmation page; only pressing its button changes the subscription, so email link scanners do not unsubscribe someone. The endpoint is idempotent and does not affect the user's SaaS account.

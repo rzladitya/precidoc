@@ -81,7 +81,7 @@ export function AuthForm({ initialSignup = false }: { initialSignup?: boolean })
     'invalid-code': text('Invalid code or the code has expired. Request a new code.', 'Kode salah atau sudah kedaluwarsa. Minta kode baru.'),
     'verified': text('Email verified. Sign in with your password.', 'Email terverifikasi. Masuk dengan kata sandi kamu.'),
     'send-failed': text('Could not send a new code. Please try again.', 'Kode baru belum berhasil dikirim. Silakan coba lagi.'),
-    'code-sent': text('A new verification code has been sent.', 'Kode verifikasi baru sudah dikirim.'),
+    'code-sent': text('A new code was requested. Check your inbox and spam. If it does not arrive, contact support.', 'Kode baru telah diminta. Periksa inbox dan spam. Jika belum diterima, hubungi bantuan.'),
   };
   const notice = ['check-email','verified','code-sent'].includes(message);
   return <AccountShell>

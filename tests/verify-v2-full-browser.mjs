@@ -9,7 +9,7 @@ const fixture=path.resolve('app/v2-browser-fixture');
 assert(!fs.existsSync(fixture),'Do not overwrite an existing route.');
 fs.mkdirSync(fixture);
 fs.writeFileSync(path.join(fixture,'page.tsx'),`import {notFound} from 'next/navigation';\nimport {Workspace} from '@/components/workspace';\nexport default function Fixture(){if(process.env.NODE_ENV!=='development')notFound();return <Workspace accountId="v2-browser-account" accountName="QA · simulated authentication"/>;}\n`);
-const out=path.resolve('outputs/precidoc-v2-2026-10-12');fs.mkdirSync(out,{recursive:true});
+const out=path.resolve(process.env.PRECIDOC_TEST_OUTPUT??'outputs/precidoc-checklist-2026-10-12');fs.mkdirSync(out,{recursive:true});
 let browser;
 const results=[];
 try{

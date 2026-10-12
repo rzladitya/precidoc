@@ -61,7 +61,7 @@ function request(payload, options = {}) {
   assert.equal(response.status, 200);assert.equal(response.headers.get('cache-control'), 'no-store');assert.deepEqual(await response.json(), { success: true });
   assert.equal(accepted.length, 1);assert.equal(jwksCalls, 1);
   const email = accepted[0].email;
-  assert.equal(email.subject, 'Verify your email | Precidoc');assert.equal(email.from, 'Precidoc <noreply@rainc.web.id>');assert.deepEqual(email.to, ['auth-email-check@example.invalid']);
+  assert.equal(email.subject, 'Verify your email | Precidoc');assert.equal(email.from, 'Precidoc <noreply@rainc.tech>');assert.deepEqual(email.to, ['auth-email-check@example.invalid']);
   assert(email.html.includes('https://precidoc.rainc.tech/precidoc-logo.png'));assert(email.html.includes('by RAinc'));assert(!email.html.includes('<svg'));assert(email.html.includes('123456'));assert(email.text.includes('Verification code: 123456'));assert(email.text.includes('10 minutes'));assert(!email.html.includes('Neon Auth'));
   assert.equal((await deliverAuthEmail(request(first))).status, 200);assert.equal(accepted.length, 1);assert.equal(accepted[0].id, `precidoc-auth/${first.event_id}`);
   assert.equal((await deliverAuthEmail(request(event(), { headerId: crypto.randomUUID() }))).status, 401);
@@ -77,7 +77,7 @@ function request(payload, options = {}) {
   assert.equal((await deliverAuthEmail(request(lookalike))).status, 401);
   for (const purpose of ['email-verification', 'sign-in', 'forget-password']) {
     const rendered = renderAuthEmail({ kind: 'otp', purpose, code: '123456', issuedAt: new Date(0).toISOString(), expiresAt: new Date(60000).toISOString() });
-    assert(rendered.text.includes('1 minute.'));assert(!rendered.text.includes('1 minutes'));assert(rendered.html.includes('max-width:560px'));assert(rendered.text.includes('admin@rainc.web.id'));
+    assert(rendered.text.includes('1 minute.'));assert(!rendered.text.includes('1 minutes'));assert(rendered.html.includes('max-width:560px'));assert(rendered.text.includes('admin@rainc.tech'));
   }
   const escaped = renderAuthEmail({ kind: 'link', purpose: 'forget-password', url: 'https://precidoc.rainc.tech/auth/reset-password?token=x&next=y', issuedAt: new Date(0).toISOString(), expiresAt: new Date(1800000).toISOString() });assert(escaped.html.includes('token=x&amp;next=y'));
   providerStatus = 429;assert.equal((await deliverAuthEmail(request(event()))).status, 503);

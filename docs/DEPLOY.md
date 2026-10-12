@@ -8,7 +8,7 @@ memory; this change does not implement persistent document storage or billing.
 
 - Node.js 24 and pnpm 11.25.0.
 - Neon project `summer-heart-72880858`, branch `production`.
-- Cloudflare account with the `rainc.web.id` zone.
+- Cloudflare account with the `rainc.tech` zone and the legacy `rainc.web.id` zone for redirects.
 - Neon Auth supported on this project's region, with no IP Allow or Private
   Networking restrictions. Verify these before applying `neon.ts`.
 - Cloudflare API token with Workers Scripts Edit and the DNS/zone permissions
@@ -91,8 +91,8 @@ empty root paths survive OpenNext routing without interpolation or decoding.
 Keep both origins trusted in Neon Auth while existing authentication links expire.
 Users sign in again on the new domain because session cookies belong to their host.
 The database and Neon Auth service URL stay the same; changing the website domain
-does not migrate or delete users or documents. The verified email sender remains
-`noreply@rainc.web.id`, and support remains `admin@rainc.web.id`.
+does not migrate or delete users or documents. The verified email sender is
+`noreply@rainc.tech`, and support is `admin@rainc.tech`.
 Inspect existing DNS and Workers routes before deployment;
 ensure changing this hostname will not replace an unrelated service.
 No R2 bucket or D1 database is required for the current account/document workflow.

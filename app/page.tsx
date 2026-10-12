@@ -5,6 +5,7 @@ import { LogoMark } from '@/components/brand';
 import { MarketingHeader, MarketingFooter } from '@/components/marketing-shell';
 import { DocumentMascot } from '@/components/document-mascot';
 import { DocumentChecks } from '@/components/document-checks';
+import { UseCaseExamples } from '@/components/use-case-examples';
 import { ProductDemo } from '@/components/product-demo';
 import { Newsletter } from '@/components/newsletter';
 import { useLanguage } from '@/components/language';
@@ -32,6 +33,7 @@ export default function Home() {
       </section>
       <div className="saas-format-band container"><span>{t('FORMAT MASUK')}</span><div><span>{t('PDF digital')}</span><span>DOCX</span><span>TXT</span><span>Markdown</span></div><span className="format-out"><Braces size={16}/>{t('JSON & Markdown keluar')}</span></div>
       <DocumentChecks/>
+      <UseCaseExamples/>
       <section id="faq" className="faq-section container"><div><h2>{t('Pertanyaan umum')}</h2><p className="faq-intro">{t('Fitur yang tersedia saat ini, dan hal yang perlu kamu periksa.')}</p></div><div className="faq-list">{faqs.map(([question,answer])=><details key={question}><summary>{t(question)}</summary><p>{t(answer)}</p></details>)}</div></section>
       <section className="saas-closing container"><div className="closing-inner"><LogoMark/><h2>{t('Coba dengan dokumenmu.')}</h2><p>{t('Baca. Periksa. Rapikan. Lalu bawa hasilnya ke langkah berikutnya.')}</p><div className="hero-actions"><Link href="/register" className="button primary">{t('Buka workspace Precidoc')}</Link><Link href="/sample" className="button text-button">{t('Coba dengan contoh')}</Link></div></div></section>
       <Newsletter />
