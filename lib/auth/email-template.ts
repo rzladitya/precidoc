@@ -5,7 +5,7 @@ export type AuthEmail = {
   issuedAt: string;
 } & ({ kind: 'otp'; code: string } | { kind: 'link'; url: string });
 
-const website = 'https://precidoc.rainc.web.id';
+const website = 'https://precidoc.rainc.tech';
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
 
 export function renderAuthEmail(message: AuthEmail) {
@@ -52,14 +52,14 @@ export function renderAuthEmail(message: AuthEmail) {
 <!--[if mso]><table role="presentation" width="560" cellspacing="0" cellpadding="0"><tr><td><![endif]-->
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="max-width:560px;border:1px solid #dfe5ee;border-radius:12px;overflow:hidden">
 <tr><td height="4" bgcolor="#2457f5" style="height:4px;font-size:0;line-height:0">&nbsp;</td></tr>
-<tr><td style="padding:28px 28px 24px;border-bottom:1px solid #edf0f5"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td width="44" valign="middle"><a href="${website}" style="text-decoration:none"><img src="${website}/precidoc-logo.png" alt="Precidoc logo" width="44" height="44" style="display:block;border:0;width:44px;height:44px"/></a></td><td valign="middle" style="padding-left:12px"><p style="margin:0;font-size:22px;line-height:26px;font-weight:700;color:#172638">Precidoc</p><p style="margin:3px 0 0;font-size:12px;line-height:16px;color:#526174">by Rainc</p></td></tr></table></td></tr>
+<tr><td style="padding:28px 28px 24px;border-bottom:1px solid #edf0f5"><table role="presentation" cellspacing="0" cellpadding="0"><tr><td width="44" valign="middle"><a href="${website}" style="text-decoration:none"><img src="${website}/precidoc-logo.png" alt="Precidoc logo" width="44" height="44" style="display:block;border:0;width:44px;height:44px"/></a></td><td valign="middle" style="padding-left:12px"><p style="margin:0;font-size:22px;line-height:26px;font-weight:700;color:#172638">Precidoc</p><p style="margin:3px 0 0;font-size:12px;line-height:16px;color:#526174">by RAinc</p></td></tr></table></td></tr>
 <tr><td style="padding:28px"><p style="margin:0 0 12px;font-size:11px;line-height:16px;font-weight:600;letter-spacing:1.3px;color:#2457f5">${copy.label}</p><h1 style="margin:0 0 16px;font-size:28px;line-height:36px;font-weight:700;letter-spacing:-.5px;color:#172638">${copy.heading}</h1><p style="margin:0 0 24px;font-size:15px;line-height:25px;color:#526174">${copy.intro}</p>
 ${action}<p style="margin:16px 0 0;font-size:13px;line-height:21px;color:#526174">${expiry}<br/>${safety}</p>${fallback}
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:28px"><tr><td style="border-top:1px solid #edf0f5;padding-top:20px"><p style="margin:0;font-size:12px;line-height:20px;color:#526174">${copy.context} ${ignore}</p><p style="margin:12px 0 0;font-size:12px;line-height:20px;color:#526174">Need help? <a href="mailto:admin@rainc.web.id" style="color:#2457f5;text-decoration:underline">Contact the Precidoc team</a>.</p></td></tr></table>
 </td></tr></table>
 <!--[if mso]></td></tr></table><![endif]-->
-<p style="margin:20px 0 0;font-size:12px;line-height:20px;color:#526174">Precidoc by Rainc · <a href="${website}" style="color:#526174;text-decoration:none">precidoc.rainc.web.id</a></p>
+<p style="margin:20px 0 0;font-size:12px;line-height:20px;color:#526174">Precidoc by RAinc · <a href="${website}" style="color:#526174;text-decoration:none">precidoc.rainc.tech</a></p>
 </td></tr></table></body></html>`;
-  const text = [`Precidoc by Rainc`, '', copy.heading, '', copy.intro, '', message.kind === 'otp' ? `Verification code: ${message.code}` : `${copy.action}: ${message.url}`, '', expiry, safety, '', copy.context, ignore, '', 'Need help? admin@rainc.web.id', website].join('\n');
+  const text = [`Precidoc by RAinc`, '', copy.heading, '', copy.intro, '', message.kind === 'otp' ? `Verification code: ${message.code}` : `${copy.action}: ${message.url}`, '', expiry, safety, '', copy.context, ignore, '', 'Need help? admin@rainc.web.id', website].join('\n');
   return { subject: copy.subject, html, text };
 }

@@ -77,7 +77,7 @@ The PDF.js worker, CMaps, standard fonts, and their bundled licenses are include
 ## Hosting and authentication
 
 Production target: Cloudflare Worker `precidoc`, custom domain
-`precidoc.rainc.web.id`, Neon project `summer-heart-72880858`, branch `production`.
+`precidoc.rainc.tech`, Neon project `summer-heart-72880858`, branch `production`.
 `neon.ts` declares Neon Auth. It must be linked and deployed using authorized Neon
 access; the app also requires its account-table migration and Worker secrets.
 

@@ -6,7 +6,7 @@ The HTML and plain-text templates are in `lib/auth/email-template.ts`. They cove
 
 The Worker requires its existing `NEON_AUTH_BASE_URL` binding plus a real `RESEND_API_KEY` secret. A Codex proxy credential placeholder cannot be used as a production Worker secret. Keep secrets out of source, generated previews and logs. The sender remains `Precidoc <noreply@rainc.web.id>`.
 
-Deploy and verify the endpoint and public logo before enabling the webhook in Neon. Configure only `send.otp` and `send.magic_link`, URL `https://precidoc.rainc.web.id/api/webhooks/neon-auth`, timeout 10 seconds. Subscribing replaces Neon's default delivery for these events. Resend errors return 503 so Neon can retry within its 15-second budget. Each event uses a stable Resend idempotency key, preventing duplicate email delivery on retries within the provider's idempotency window.
+Deploy and verify the endpoint and public logo before enabling the webhook in Neon. Configure only `send.otp` and `send.magic_link`, URL `https://precidoc.rainc.tech/api/webhooks/neon-auth`, timeout 10 seconds. Subscribing replaces Neon's default delivery for these events. Resend errors return 503 so Neon can retry within its 15-second budget. Each event uses a stable Resend idempotency key, preventing duplicate email delivery on retries within the provider's idempotency window.
 
 If delivery fails, disable the webhook (`enabled: false`) in Neon to restore the saved SMTP provider. Do not alter email verification requirements or invalidate existing users or sessions to change email appearance.
 

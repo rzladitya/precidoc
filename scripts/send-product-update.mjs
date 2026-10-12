@@ -8,7 +8,7 @@ const file = args.find(arg => arg.startsWith('--message-file='))?.slice('--messa
 if (!file || !process.env.DATABASE_URL) throw new Error('Set DATABASE_URL and pass --message-file=/path/to/update.json. Without --send this only previews the recipient count.');
 const message = JSON.parse(await readFile(file, 'utf8'));
 const url = new URL(message.url);
-if (url.origin !== 'https://precidoc.rainc.web.id' || url.username || url.password) throw new Error('The update URL must point to the Precidoc website.');
+if (url.origin !== 'https://precidoc.rainc.tech' || url.username || url.password) throw new Error('The update URL must point to the Precidoc website.');
 for (const locale of ['en', 'id']) {
   if (typeof message[locale]?.subject !== 'string' || !message[locale].subject.trim() || message[locale].subject.length > 200 || /[\r\n]/.test(message[locale].subject) || typeof message[locale]?.intro !== 'string' || !message[locale].intro.trim() || message[locale].intro.length > 5000) throw new Error('Provide a subject and intro for both en and id.');
 }
@@ -22,7 +22,7 @@ let sent = 0;
 for (const subscriber of subscribers) {
   if (subscriber.email.endsWith('.invalid')) throw new Error('A reserved test address remains in the subscriber list. Clean up the test fixture before sending.');
   const copy = message[subscriber.locale];
-  const unsubscribe = `https://precidoc.rainc.web.id/newsletter/unsubscribe?token=${subscriber.unsubscribe_token}`;
+  const unsubscribe = `https://precidoc.rainc.tech/newsletter/unsubscribe?token=${subscriber.unsubscribe_token}`;
   const isEnglish = subscriber.locale === 'en';
   const text = `${copy.intro}\n\n${url.href}\n\n${isEnglish ? 'Unsubscribe from Precidoc updates' : 'Berhenti menerima pembaruan Precidoc'}: ${unsubscribe}`;
   const html = `<div style="font-family:Arial,sans-serif;max-width:600px;color:#182230"><h1 style="font-size:24px">${escape(copy.subject)}</h1><p style="line-height:1.8;white-space:pre-line">${escape(copy.intro)}</p><p><a href="${escape(url.href)}">${isEnglish ? 'Read the update' : 'Baca pembaruan'}</a></p><hr style="border:0;border-top:1px solid #dbe2ed;margin-top:32px"><p style="font-size:12px;color:#526174">${isEnglish ? 'You subscribed to Precidoc product updates.' : 'Kamu berlangganan pembaruan produk Precidoc.'} <a href="${escape(unsubscribe)}">${isEnglish ? 'Unsubscribe' : 'Berhenti berlangganan'}</a></p></div>`;

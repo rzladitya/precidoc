@@ -34,7 +34,7 @@ configures Neon services and pulls local environment variables; it does not
 publish the frontend or run the account-table migration.
 
 Enable email verification and email/password login on the production branch. Add
-`https://precidoc.rainc.web.id` as a trusted Auth origin. Google OAuth is not required for this email/password workflow.
+`https://precidoc.rainc.tech` as a trusted Auth origin. Google OAuth is not required for this email/password workflow.
 Configure production SMTP for account verification and recovery emails.
 
 Required application variables:
@@ -82,8 +82,15 @@ Wrangler's interactive `secret put`. Keep secret input out of shell arguments.
 pnpm deploy:worker
 ```
 
-`wrangler.jsonc` attaches `precidoc.rainc.web.id` as a custom domain to the
-`precidoc` Worker. Inspect existing DNS and Workers routes before deployment;
+`wrangler.jsonc` attaches `precidoc.rainc.tech` as a custom domain to the
+`precidoc` Worker. The previous `precidoc.rainc.web.id` domain remains attached
+and returns a permanent 308 redirect to the same path and query on the new domain.
+Keep both origins trusted in Neon Auth while existing authentication links expire.
+Users sign in again on the new domain because session cookies belong to their host.
+The database and Neon Auth service URL stay the same; changing the website domain
+does not migrate or delete users or documents. The verified email sender remains
+`noreply@rainc.web.id`, and support remains `admin@rainc.web.id`.
+Inspect existing DNS and Workers routes before deployment;
 ensure changing this hostname will not replace an unrelated service.
 No R2 bucket or D1 database is required for the current account/document workflow.
 Check current Cloudflare and Neon free-tier quotas before production launch.

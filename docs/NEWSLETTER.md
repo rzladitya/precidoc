@@ -4,7 +4,7 @@ The landing form records explicit consent, email and interface language in `prec
 
 Run the existing `pnpm db:migrate` after setting the production database URL. It creates the newsletter tables without changing existing account records. Existing Cloudflare database bindings are sufficient for collection; the form does not need a Resend key in the Worker.
 
-Prepare an update file with `url` pointing to the Precidoc site and `en`/`id` objects containing `subject` and `intro`. Preview the audience in the configured Node environment:
+Prepare an update file with `url` pointing to `https://precidoc.rainc.tech` and `en`/`id` objects containing `subject` and `intro`. New updates and unsubscribe links use this domain; older links on `precidoc.rainc.web.id` redirect while preserving their token. Preview the audience in the configured Node environment:
 
 ```sh
 NODE_USE_ENV_PROXY=1 node --env-file-if-exists=.env.local scripts/send-product-update.mjs --message-file=/path/to/update.json

@@ -19,6 +19,10 @@
   ],
   "routes": [
     {
+      "pattern": "precidoc.rainc.tech",
+      "custom_domain": true
+    },
+    {
       "pattern": "precidoc.rainc.web.id",
       "custom_domain": true
     }

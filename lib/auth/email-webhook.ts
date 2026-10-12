@@ -91,7 +91,7 @@ export async function deliverAuthEmail(request: Request) {
     if (payload.event_type === 'send.otp') message = { kind: 'otp', purpose: payload.event_data.otp_type, code: payload.event_data.otp_code, issuedAt: payload.timestamp, expiresAt: payload.event_data.expires_at };
     else {
       const link = new URL(payload.event_data.link_url);
-      if (link.protocol !== 'https:' || link.username || link.password || ![authUrl.origin, 'https://precidoc.rainc.web.id'].includes(link.origin)) throw new InvalidWebhook();
+      if (link.protocol !== 'https:' || link.username || link.password || ![authUrl.origin, 'https://precidoc.rainc.tech', 'https://precidoc.rainc.web.id'].includes(link.origin)) throw new InvalidWebhook();
       message = { kind: 'link', purpose: payload.event_data.link_type, url: link.href, issuedAt: payload.timestamp, expiresAt: payload.event_data.expires_at };
     }
     const apiKey = process.env.RESEND_API_KEY;
