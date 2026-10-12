@@ -1,15 +1,16 @@
+import { assertProcessingActive, ProcessingError, validateDocumentBytes } from './file-safety';
 export type SourceUnit={id:string,title:string,original:string,text:string,page?:number,tableCount:number};
-export type PreparedDocument={id:string,name:string,format:string,bytes:number,hash:string,title:string,version:string,category:string,units:SourceUnit[],notes:string[],approved:boolean,objectUrl?:string,sample?:boolean};
+export type PreparedDocument={id:string,name:string,format:string,bytes:number,hash:string,title:string,version:string,category:string,units:SourceUnit[],notes:string[],approved:boolean,objectUrl?:string,sample?:boolean,processingMs?:number,processedAt?:string};
 export type Finding={id:string,title:string,detail:string,severity:'warning'|'info'|'blocker',unitId?:string};
 export type Chunk={id:string,title:string,text:string,estimatedTokens:number,sources:{unitId:string,page?:number}[],edited:boolean};
 export const MAX_BYTES=15*1024*1024;
 export const MAX_CHARACTERS=750000;
-export function normalize(text:string){return text.replace(/\r\n?/g,'\n').replace(/[ \t]+/g,' ').replace(/ *\n */g,'\n').replace(/\n{3,}/g,'\n\n').trim()}
+export function normalize(text:string){const value=text.replace(/\r\n?/g,'\n');return value.trim()?value.replace(/^\n+|\n+$/g,''):''}
 export function tokenEstimate(text:string){return Math.ceil(text.length/4)}
 export function splitText(text:string,maxChars:number){
   if(!Number.isFinite(maxChars)||maxChars<200)throw new Error('Ukuran chunk tidak valid.');
-  const pieces:string[]=[];let rest=text.trim();
-  while(rest.length>maxChars){let cut=rest.lastIndexOf('\n',maxChars);if(cut<maxChars*.5)cut=rest.lastIndexOf(' ',maxChars);if(cut<maxChars*.5)cut=maxChars;pieces.push(rest.slice(0,cut).trim());rest=rest.slice(cut).trim()}
+  const pieces:string[]=[];let rest=normalize(text);
+  while(rest.length>maxChars){let cut=rest.lastIndexOf('\n',maxChars);if(cut<maxChars*.5)cut=rest.lastIndexOf(' ',maxChars);if(cut<maxChars*.5)cut=maxChars;pieces.push(normalize(rest.slice(0,cut)));rest=normalize(rest.slice(cut))}
   if(rest)pieces.push(rest);return pieces;
 }
 function sourceFingerprint(doc: PreparedDocument, unit: SourceUnit) {
@@ -48,39 +49,58 @@ export function findings(doc:PreparedDocument):Finding[]{
   for(const unit of doc.units){if(!unit.text.trim())out.push({id:`empty-${unit.id}`,title:unit.page?`Halaman ${unit.page} tidak memiliki teks`:`${unit.title} kosong`,detail:doc.format==='PDF'?'Halaman bisa berupa scan, gambar, atau kosong. Periksa sumber; OCR otomatis belum tersedia.':'Periksa apakah ada isi yang belum berhasil diekstrak.',severity:'blocker',unitId:unit.id});
     if(/\uFFFD/.test(unit.text))out.push({id:`encoding-${unit.id}`,title:`Karakter tidak terbaca pada ${unit.title}`,detail:'Periksa simbol, angka, dan kata yang mengandung karakter pengganti (�).',severity:'warning',unitId:unit.id});}
   const texts=doc.units.filter(u=>u.text.trim()).map(u=>sourceFingerprint(doc,u));const duplicates=texts.length-new Set(texts).size;
-  if(duplicates)out.push({id:'duplicates',title:`${duplicates} bagian dengan teks identik`,detail:'Periksa apakah pengulangan memang diperlukan. Penggabungan chunk mempertahankan semua referensi sumber.',severity:'warning'});
-  if(doc.format==='PDF')out.push({id:'pdf-layout',title:'Urutan baca dan tabel PDF perlu diperiksa',detail:'Ekstraksi teks belum memulihkan tabel dan layout multi-kolom secara andal. Bandingkan dengan file asli.',severity:'info'});
-  if(doc.units.some(u=>u.tableCount>0))out.push({id:'tables',title:'Periksa tabel hasil ekstraksi',detail:'Verifikasi header, angka, satuan, dan hubungan baris dengan dokumen asli.',severity:'info'});
+  if(duplicates)out.push({id:'duplicates',title:`${duplicates} bagian dengan teks identik`,detail:'Periksa apakah pengulangan memang diperlukan. Penggabungan chunk mempertahankan semua referensi sumber.',severity:'warning',unitId:doc.units.find((u,i)=>u.text.trim()&&doc.units.slice(0,i).some(p=>p.text.trim()&&sourceFingerprint(doc,p)===sourceFingerprint(doc,u)))?.id});
+  if(doc.format==='PDF')out.push({id:'pdf-layout',title:'Urutan baca dan tabel PDF perlu diperiksa',detail:'Ekstraksi teks belum memulihkan tabel dan layout multi-kolom secara andal. Bandingkan dengan file asli.',severity:'info',unitId:doc.units[0]?.id});
+  if(doc.units.some(u=>u.tableCount>0))out.push({id:'tables',title:'Periksa tabel hasil ekstraksi',detail:'Verifikasi header, angka, satuan, dan hubungan baris dengan dokumen asli.',severity:'info',unitId:doc.units.find(u=>u.tableCount>0)?.id});
   doc.notes.forEach((note,i)=>out.push({id:`note-${i}`,title:'Catatan ekstraksi',detail:note,severity:'info'}));return out;
 }
 function markdownTable(table:Element){const rows=Array.from(table.querySelectorAll('tr')).map(row=>Array.from(row.querySelectorAll('th,td')).map(c=>(c.textContent??'').trim().replace(/\|/g,'\\|').replace(/\n/g,' ')));if(!rows.length)return '';const width=Math.max(...rows.map(r=>r.length));const fill=(r:string[])=>Array.from({length:width},(_,i)=>r[i]??'');return [fill(rows[0]),Array(width).fill('---'),...rows.slice(1).map(fill)].map(r=>`| ${r.join(' | ')} |`).join('\n')}
-function textUnits(text:string,defaultTitle='Dokumen'){const lines=text.replace(/\r\n?/g,'\n').split('\n');const units:SourceUnit[]=[];let title=defaultTitle;let current:string[]=[];
+function textUnits(text:string,defaultTitle='Dokumen'){const lines=text.replace(/\r\n?/g,'\n').split('\n');const units:SourceUnit[]=[];let title=defaultTitle;let current:string[]=[];let fence:{mark:string;length:number}|null=null;
   const flush=()=>{const body=normalize(current.join('\n'));if(body)units.push({id:`section_${String(units.length+1).padStart(2,'0')}`,title,original:body,text:body,tableCount:countMarkdownTables(body)});current=[]};
-  for(const line of lines){if(/^#{1,6}\s/.test(line)){flush();title=line.replace(/^#{1,6}\s+/,'').trim()}current.push(line)}flush();
+  for(const line of lines){const marker=line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);if(marker){if(!fence)fence={mark:marker[1][0],length:marker[1].length};else if(marker[1][0]===fence.mark&&marker[1].length>=fence.length&&!marker[2].trim())fence=null;current.push(line);continue;}if(!fence&&/^#{1,6}\s/.test(line)){flush();title=line.replace(/^#{1,6}\s+/,'').trim()}current.push(line)}flush();
   if(!units.length)units.push({id:'section_01',title:defaultTitle,original:'',text:'',tableCount:0});return units;
 }
-export type ParseLimits = {maxBytes?:number;maxPages?:number;maxCharacters?:number};
+export type ParseLimits = {maxBytes?:number;maxPages?:number;maxCharacters?:number;maxProcessingMs?:number;signal?:AbortSignal};
 export async function parseFile(file:File,onProgress:(message:string)=>void,limits:ParseLimits={}):Promise<PreparedDocument>{
+  const controller = new AbortController();
+  const cancel = () => controller.abort(new ProcessingError('cancelled'));
+  limits.signal?.addEventListener('abort', cancel, {once:true});
+  if(limits.signal?.aborted)cancel();
+  const started = performance.now();
+  let rejectAbort:(reason:unknown)=>void = () => {};
+  const aborted = new Promise<never>((_,reject)=>{rejectAbort=reject;});
+  const reject = () => rejectAbort(controller.signal.reason);
+  controller.signal.addEventListener('abort',reject,{once:true});
+  const timer = setTimeout(()=>controller.abort(new ProcessingError('timeout')),limits.maxProcessingMs??30000);
+  try {
+    assertProcessingActive(controller.signal);
+    const result = await Promise.race([parseDocument(file,onProgress,limits,controller.signal),aborted]);
+    return {...result, processingMs:Math.round(performance.now()-started),processedAt:new Date().toISOString()};
+  } finally {clearTimeout(timer);limits.signal?.removeEventListener('abort',cancel);controller.signal.removeEventListener('abort',reject);}
+}
+async function parseDocument(file:File,onProgress:(message:string)=>void,limits:ParseLimits,signal:AbortSignal):Promise<PreparedDocument>{
   const maxBytes=limits.maxBytes??MAX_BYTES;const maxPages=limits.maxPages??200;const maxCharacters=limits.maxCharacters??MAX_CHARACTERS;
   const ext=file.name.split('.').pop()?.toLowerCase();if(!['pdf','docx','txt','md'].includes(ext??''))throw new Error(`${file.name}: gunakan PDF, DOCX, TXT, atau MD.`);
   if(!file.size)throw new Error(`${file.name}: file kosong.`);if(file.size>maxBytes)throw new Error(`${file.name}: ukuran maksimal ${maxBytes/(1024*1024)} MB.`);
-  const buffer=await file.arrayBuffer();const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',buffer))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  onProgress(`Memvalidasi ${file.name}`);
+  const buffer=await file.arrayBuffer();assertProcessingActive(signal);await validateDocumentBytes(file,buffer,signal);assertProcessingActive(signal);const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',buffer))).map(b=>b.toString(16).padStart(2,'0')).join('');
   const notes:string[]=[];let units:SourceUnit[]=[];
   if(ext==='pdf'){
-    const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');pdfjs.GlobalWorkerOptions.workerSrc='/pdf.worker.min.mjs';
-    const loading=pdfjs.getDocument({data:new Uint8Array(buffer),useSystemFonts:true,cMapUrl:'/pdfjs/cmaps/',cMapPacked:true,standardFontDataUrl:'/pdfjs/standard_fonts/'});
-    try{const pdf=await loading.promise;if(pdf.numPages>maxPages)throw new Error(`Maksimal ${maxPages} halaman per PDF. Pisahkan dokumen terlebih dahulu.`);
+    const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');assertProcessingActive(signal);pdfjs.GlobalWorkerOptions.workerSrc='/pdf.worker.min.mjs';
+    const loading=pdfjs.getDocument({data:new Uint8Array(buffer),useSystemFonts:true,cMapUrl:'/pdfjs/cmaps/',cMapPacked:true,standardFontDataUrl:'/pdfjs/standard_fonts/',enableXfa:false});
+    const cancelPdf=()=>{void loading.destroy().catch(()=>{});};signal.addEventListener('abort',cancelPdf,{once:true});
+    try{const pdf=await loading.promise;assertProcessingActive(signal);if(pdf.numPages>maxPages)throw new Error(`Maksimal ${maxPages} halaman per PDF. Pisahkan dokumen terlebih dahulu.`);
       let extractedSize=0;
-      for(let n=1;n<=pdf.numPages;n++){onProgress(`Membaca ${file.name} · halaman ${n}/${pdf.numPages}`);const page=await pdf.getPage(n);const content=await page.getTextContent();let original='';
+      for(let n=1;n<=pdf.numPages;n++){assertProcessingActive(signal);onProgress(`Membaca ${file.name} · halaman ${n}/${pdf.numPages}`);const page=await pdf.getPage(n);const content=await page.getTextContent();assertProcessingActive(signal);let original='';
         for(const item of content.items){if('str'in item){original+=item.str+(item.hasEOL?'\n':' ');}}
         original=normalize(original);extractedSize+=original.length;if(extractedSize>maxCharacters)throw new Error('Dokumen terlalu panjang. Pisahkan menjadi beberapa file.');
         units.push({id:`page_${n}`,title:`Halaman ${n}`,page:n,original,text:original,tableCount:0});page.cleanup();
       }
-    }catch(error){if(error instanceof Error&&error.name==='PasswordException')throw new Error('PDF dilindungi password. Gunakan salinan PDF yang sudah dibuka.');throw error}finally{await loading.destroy()}
+    }catch(error){if(error instanceof Error&&error.name==='PasswordException')throw new Error('PDF dilindungi password. Gunakan salinan PDF yang sudah dibuka.');throw error}finally{signal.removeEventListener('abort',cancelPdf);await loading.destroy()}
   }else if(ext==='docx'){
-    const {default:mammoth}=await import('mammoth/mammoth.browser.js');
-    onProgress(`Membaca struktur ${file.name}`);const result=await mammoth.convertToHtml({arrayBuffer:buffer},{convertImage:mammoth.images.imgElement(async()=>({src:''}))});
-    const html=new DOMParser().parseFromString(result.value,'text/html');let title=file.name.replace(/\.[^.]+$/,'');let parts:string[]=[];let tables=0;
+    const {default:mammoth}=await import('mammoth/mammoth.browser.js');assertProcessingActive(signal);
+    onProgress(`Membaca struktur ${file.name}`);const result=await mammoth.convertToHtml({arrayBuffer:buffer},{externalFileAccess:false,convertImage:mammoth.images.imgElement(async()=>({src:''}))});
+    assertProcessingActive(signal);const html=new DOMParser().parseFromString(result.value,'text/html');let title=file.name.replace(/\.[^.]+$/,'');let parts:string[]=[];let tables=0;
     const flush=()=>{const text=normalize(parts.join('\n\n'));if(text)units.push({id:`section_${String(units.length+1).padStart(2,'0')}`,title,original:text,text,tableCount:tables});parts=[];tables=0};
     for(const element of Array.from(html.body.children)){
       if(/^H[1-6]$/.test(element.tagName)){flush();title=(element.textContent??'').trim();parts.push(`${'#'.repeat(Number(element.tagName[1]))} ${title}`)}
@@ -92,6 +112,7 @@ export async function parseFile(file:File,onProgress:(message:string)=>void,limi
     if(result.messages.length)notes.push('Konversi DOCX melaporkan beberapa elemen atau style yang tidak didukung. Periksa hasil terhadap sumber.');
   }else{let text:string;try{text=new TextDecoder('utf-8',{fatal:true}).decode(buffer)}catch{throw new Error('Teks tidak menggunakan encoding UTF-8. Simpan ulang sebagai UTF-8, lalu coba kembali.')}units=textUnits(text,file.name.replace(/\.[^.]+$/,''))}
   if(units.reduce((sum,u)=>sum+u.text.length,0)>maxCharacters)throw new Error('Dokumen terlalu panjang. Pisahkan menjadi beberapa file.');
+  assertProcessingActive(signal);onProgress(`Memeriksa ${file.name}`);
   return{id:crypto.randomUUID(),name:file.name,format:ext!.toUpperCase(),bytes:file.size,hash,title:file.name.replace(/\.[^.]+$/,''),version:'',category:'Belum ditentukan',units,notes,approved:false,objectUrl:URL.createObjectURL(file)};
 }
 export function makeSample():PreparedDocument{
@@ -121,5 +142,5 @@ export function knowledgeReadiness(doc: PreparedDocument, chunks: Chunk[]) {
     notAssessed: ['semantic-quality', 'retrieval-accuracy', 'pii', 'language', 'ocr', 'pdf-table-layout'],
   };
 }
-export function makePackage(doc:PreparedDocument,chunks:Chunk[]){return{schemaVersion:'1.1',document:{id:doc.id,filename:doc.name,format:doc.format,sha256:doc.sample?null:doc.hash,title:doc.title,version:doc.version||null,category:doc.category,reviewedByUser:doc.approved,sourceUnits:doc.units.map(u=>({id:u.id,title:u.title,page:u.page??null,edited:u.text!==u.original}))},processing:{method:'rules-and-structure',ocrPerformed:false,llmUsed:false,tokenCountMethod:'characters_divided_by_4_estimate'},readiness:knowledgeReadiness(doc,chunks),checks:findings(doc),chunks,exportedAt:new Date().toISOString()}}
+export function makePackage(doc:PreparedDocument,chunks:Chunk[]){return{schemaVersion:'1.1',document:{id:doc.id,filename:doc.name,format:doc.format,sha256:doc.sample?null:doc.hash,title:doc.title,version:doc.version||null,category:doc.category,reviewedByUser:doc.approved,sourceUnits:doc.units.map(u=>({id:u.id,title:u.title,page:u.page??null,edited:u.text!==u.original}))},processing:{method:'rules-and-structure',ocrPerformed:false,llmUsed:false,location:'browser-memory',durationMs:doc.processingMs??null,tokenCountMethod:'characters_divided_by_4_estimate'},readiness:knowledgeReadiness(doc,chunks),checks:findings(doc),chunks,exportedAt:new Date().toISOString()}}
 export function markdownExport(doc:PreparedDocument,chunks:Chunk[]){return`# ${doc.title}\n\n- File: ${doc.name}\n- Versi: ${doc.version||'Belum diisi'}\n- Jenis: ${doc.category}\n- Ditinjau pengguna: ${doc.approved?'Ya':'Tidak'}\n\n`+chunks.map((chunk,i)=>`## Chunk ${i+1}: ${chunk.title}\n\n${chunk.text}\n\nSumber: ${chunk.sources.map(s=>s.page?`halaman ${s.page} (${s.unitId})`:s.unitId).join(', ')}${chunk.edited?' · Teks telah diedit pengguna':''}\n`).join('\n')}

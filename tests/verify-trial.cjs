@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CJS harness transpiles TypeScript modules and replaces providers without sending data. */
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
@@ -27,9 +28,9 @@ const originalResolve = Module._resolveFilename;
 Module._resolveFilename = function(request,parent,...args){if(request.startsWith('@/'))request=path.resolve(request.slice(2));return originalResolve.call(this,request,parent,...args);};
 const originalLoad = Module._load;
 let downloads = [];
-let verified=false,invalidOtp=true,otpSent=0;
+let verified=false,invalidOtp=true,otpSent=0,authUnavailable=false;
 let resetRequest,resetSubmission,resetFails=false;
-const authClient={signUp:{email:async()=>({data:{},error:null})},signIn:{email:async()=>({error:{code:'EMAIL_NOT_VERIFIED',message:'Verify your email'}})},getSession:async()=>({data:{user:{emailVerified:verified}}}),emailOtp:{verifyEmail:async({otp})=>{assert.equal(otp,'123456');if(invalidOtp)return{error:{message:'Invalid code'}};verified=true;return{error:null};},sendVerificationOtp:async({email,type})=>{assert.equal(email,'test@example.test');assert.equal(type,'email-verification');otpSent++;return{error:null};}}};
+const authClient={signUp:{email:async()=>authUnavailable?({error:{status:503}}):({data:{},error:null})},signIn:{email:async()=>({error:{code:'EMAIL_NOT_VERIFIED',message:'Verify your email'}})},getSession:async()=>({data:{user:{emailVerified:verified}}}),emailOtp:{verifyEmail:async({otp})=>{assert.equal(otp,'123456');if(invalidOtp)return{error:{message:'Invalid code'}};verified=true;return{error:null};},sendVerificationOtp:async({email,type})=>{assert.equal(email,'test@example.test');assert.equal(type,'email-verification');otpSent++;return{error:null};}}};
 Module._load = function(request,parent,...args){
  if(request==='@/lib/auth/client')return{authClient:{...authClient,requestPasswordReset:async payload=>{resetRequest=payload;return{error:resetFails?{code:'FAILED'}:null};},resetPassword:async payload=>{resetSubmission=payload;return{error:resetFails?{code:'FAILED'}:null};}}};
  if(request==='next/navigation')return{usePathname:()=>'/auth/sign-in',useSearchParams:()=>new URLSearchParams(window.location.search)};
@@ -44,7 +45,6 @@ for(const extension of ['.ts','.tsx']) require.extensions[extension] = (module,f
 const React = require('react');
 const { createRoot } = require('react-dom/client');
 const { LanguageProvider, useLanguage } = require('../components/language.tsx');
-const { ProductDemo } = require('../components/product-demo.tsx');
 const { Workspace } = require('../components/workspace.tsx');
 const { Registration } = require('../components/registration.tsx');
 const { AuthForm }=require('../components/auth-form.tsx');
@@ -79,6 +79,22 @@ async function mount(component,props){await act(async()=>{root.render(React.crea
  await act(async()=>{setLocale('en');await tick();});
  await click(document.querySelector('[aria-label="Remove document from this tab"]'));await upload([new File(['Replacement'],'replacement.txt')]);assert.equal(document.querySelectorAll('.document-item').length,1);
  await act(async()=>{root.render(null);await tick();});
+ let activeIdentity='full-user',sessionUnavailable=false;
+ globalThis.fetch=async()=>sessionUnavailable?Response.json({error:'session_unavailable'},{status:503}):Response.json({userId:activeIdentity});
+ window.confirm=()=>true;
+ await mount(Workspace,{accountId:'full-user',accountName:'Full workspace QA'});
+ async function fullUpload(files){const picker=document.querySelector('input[type=file]');Object.defineProperty(picker,'files',{configurable:true,value:files});await act(async()=>{picker.dispatchEvent(new window.Event('change',{bubbles:true}));await new Promise(resolve=>setTimeout(resolve,120));});}
+ await fullUpload([new File(['# Full source\n\nFirst full document.'],'full-one.md'),new File(['# Second source\n\nSecond full document.'],'full-two.md')]);
+ assert.equal(document.querySelectorAll('.document-item').length,2);
+ assert.equal(document.querySelector('.metadata-grid input[placeholder]').disabled,false);
+ await change(document.querySelector('.metadata-grid input[placeholder]'),'v1.0');
+ await click(tab('Export'));assert(document.querySelector('.output-preview'));assert.equal(button('Export JSON').disabled,true);
+ await click(document.querySelector('#approve-document'));await click(button('JSON'));assert(document.querySelector('.output-preview').textContent.includes('rules-and-structure'));
+ await click(button('Export JSON'));const exported=JSON.parse(downloads.at(-1).content);assert.equal(exported.document.version,'v1.0');assert.equal(exported.processing.llmUsed,false);assert(exported.chunks.every(chunk=>chunk.sources.length));
+ sessionUnavailable=true;await act(async()=>{window.dispatchEvent(new window.Event('focus'));await tick();});assert.equal(document.querySelectorAll('.document-item').length,2);
+ sessionUnavailable=false;activeIdentity='different-user';await act(async()=>{window.dispatchEvent(new window.Event('focus'));await tick();});assert(document.querySelector('h1').textContent.includes('session has ended'));assert.equal(document.querySelectorAll('.document-item').length,0);assert(!document.body.textContent.includes('full-two.md'));
+ await act(async()=>{root.render(null);await tick();});
+ console.log('Passed full workspace: multi-file parsing, editable metadata, JSON preview/export, genuine source references, temporary session outage preservation, and cross-account local state clearing. Auth provider simulated.');
  await mount(Registration,{user:null,signInHref:'/auth/sign-in?returnTo=%2Fregister'});
  assert.equal(document.querySelector('h1').textContent,'Create your account');assert.equal(document.querySelectorAll('input').length,3);assert(document.querySelector('.account-art'));assert(document.querySelector('.account-switch').textContent.includes('Sign in'));
  await act(async()=>{root.render(null);await tick();});
@@ -99,6 +115,7 @@ async function mount(component,props){await act(async()=>{root.render(React.crea
  await change(document.querySelector('input[type=email]'),'test@example.test');
  await change(document.querySelector('input[type=password]'),'password-test');
  async function submitAuth(){await act(async()=>{document.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));await tick();});}
+ authUnavailable=true;await submitAuth();assert(document.querySelector('[role=alert]').textContent.includes('temporarily unavailable'));assert.equal(document.querySelector('input[type=email]').value,'test@example.test');authUnavailable=false;
  await submitAuth();assert(document.querySelector('h1').textContent.includes('Verify your email'));
  await change(document.querySelector('input'),'123456');
  await submitAuth();assert(document.querySelector('[role=alert]').textContent.includes('Invalid code'));assert.equal(verified,false);

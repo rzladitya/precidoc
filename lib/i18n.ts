@@ -2,6 +2,7 @@ export type Locale = 'en' | 'id';
 
 // UI copy only. Uploaded document text and headings are never translated.
 export const english: Record<string, string> = {
+  'Memvalidasi {name}': 'Validating {name}', 'Memeriksa {name}': 'Checking {name}',
   'Ketahui apa yang perlu diperbaiki.': 'Know what needs attention.',
   'Lihat skor kesiapan, teks kosong, metadata, dan duplikasi. Setiap pemeriksaan menunjukkan batasan dan langkah berikutnya.': 'Inspect readiness, empty sources, metadata and duplicates. Every check explains its limits and the next step.',
   'Pemeriksaan yang transparan': 'Explainable checks',

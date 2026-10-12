@@ -12,7 +12,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <span className={`brand ${compact ? 'compact' : ''}`}>
       <LogoMark />
-      <span className="brand-wordmark">Precidoc{!compact && <small>by Rainc</small>}</span>
+      <span className="brand-wordmark">Precidoc{!compact && <small>by RAinc</small>}</span>
     </span>
   );
 }

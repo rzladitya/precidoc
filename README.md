@@ -1,18 +1,21 @@
-# Precidoc by Rainc — full source code
+# Precidoc by RAinc — full source code
 
-Source export of the latest deployed website, dated 8 October 2026.
+Precidoc V2 is an early access document preparation and review product by RAinc. It uses real browser parsing and explainable rules; an LLM engine is planned, not currently active.
 
 The application uses React 19, TypeScript, Next.js, OpenNext for Cloudflare Workers, Neon Postgres, and Neon Auth. Deployment instructions are in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Included features
 
-- English and Indonesian interface, plus light and graphite themes.
-- Interactive product demo on the landing page.
+- English and Indonesian interface with the blue Precidoc visual identity.
+- An editable, pre-parsed walkthrough on the homepage, clearly labelled. `/sample` runs its predefined Markdown input through the real parser.
 - `/sample`: a basic workspace with a built-in example. Replace the example with one PDF, DOCX, TXT, or Markdown file. Trial limits: one active document, 5 MB, 20 PDF pages, and 100,000 extracted characters. Edit text, inspect chunks, review, and download Markdown.
 - `/register`: Email/password sign-in through Neon Auth followed by Precidoc account registration.
 - `/app`: server-protected full workspace. Limits: 10 documents per tab, 5 files per upload batch, 15 MB per file, 200 PDF pages, and 750,000 extracted characters per file. Metadata, chunk size, deduplication, and JSON/Markdown export controls are enabled.
 - `/api/account`: validates registration and stores the account in Neon Postgres.
-- Source references, manual edits, rule checks, and manual review before export.
+- Source references, manual edits, rule checks, safe PDF canvas preview, output previews, processing cancellation/retry, and manual review before export.
+- Session-only activity and processing times, clear-tab controls, resource budgets and session isolation.
+- Product, support/FAQ, Privacy Policy, Terms, changelog and practical EN/ID tutorials.
+- Explicitly opt-in aggregate usage counters; default off, with DNT/GPC support and no document content or user IDs.
 
 Uploaded documents are processed in browser memory. Accounts persist, but uploaded documents and edits do not survive a reload or navigation away from the workspace. Download your result first. OCR, LLM processing, embeddings, and knowledge-base connectors are not implemented.
 
@@ -39,6 +42,9 @@ Run these commands from the project root:
 
 ```sh
 pnpm test
+node tests/verify-file-safety.mjs
+node tests/verify-usage.cjs
+node tests/verify-auth-emails.cjs
 node node_modules/typescript/bin/tsc --noEmit --incremental false
 node tests/verify-account.cjs
 node tests/verify-trial.cjs
@@ -46,6 +52,12 @@ pnpm build:worker
 ```
 
 The document tests use real PDF/DOCX fixtures and cover extraction, trial boundaries, source edits, duplicate provenance, and export. Account tests use SQLite as a local adapter for parameterized SQL templates and simulate verified Neon sessions. Trial tests mount the actual React components with a simulated DOM and exercise their handlers. These tests do not perform a live Email/password authentication flow or replace a visual browser review.
+
+For browser verification with system Chromium, start `pnpm dev`, then run
+`node tests/verify-v2-browser.mjs` and `node tests/verify-v2-full-browser.mjs`.
+The full-workspace harness creates a **local development-only**, simulated
+authentication fixture and removes it in `finally`; never use it on a public host.
+The fixtures do not validate a live email/OTP exchange.
 
 The PDF.js worker, CMaps, standard fonts, and their bundled licenses are included under `public/`. Update those assets together when changing the PDF.js version.
 

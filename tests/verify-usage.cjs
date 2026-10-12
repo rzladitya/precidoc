@@ -1,0 +1,38 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Provider-free TypeScript/SQL route harness. */
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),Module=require('node:module'),ts=require('typescript');
+const {DatabaseSync}=require('node:sqlite');
+const db=new DatabaseSync(':memory:');
+for(const match of fs.readFileSync('scripts/migrate-neon.mjs','utf8').matchAll(/await sql`([\s\S]+?)`;/g))db.exec(match[1]);
+let available=true;
+const sql=async(parts,...values)=>{if(!available)throw new Error('Unavailable');const query=parts.join('?');const prepared=db.prepare(query);return /RETURNING|^SELECT/.test(query)?prepared.all(...values):(prepared.run(...values),[]);};
+const resolve=Module._resolveFilename,load=Module._load;
+Module._resolveFilename=function(request,parent,...args){return resolve.call(this,request.startsWith('@/')?path.resolve(request.slice(2)):request,parent,...args);};
+Module._load=function(request,parent,...args){if(request==='./index'&&parent.filename.includes('/db/'))return{getAccountDb:()=>sql};return load.call(this,request,parent,...args);};
+require.extensions['.ts']=(module,filename)=>module._compile(ts.transpileModule(fs.readFileSync(filename,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText,filename);
+const {POST}=require('../app/api/usage/route.ts');
+const usage=require('../lib/usage.ts');
+const sample={event:'sample_started',duration:'none',consent:true};
+const request=(data,headers={})=>new Request('https://precidoc.test/api/usage',{method:'POST',headers:{origin:'https://precidoc.test','content-type':'application/json','cf-connecting-ip':'192.0.2.5',...headers},body:JSON.stringify(data)});
+(async()=>{
+  assert.equal((await POST(request(sample,{origin:'https://evil.test'}))).status,403);
+  assert.equal((await POST(request({...sample,consent:false}))).status,400);
+  assert.equal((await POST(request({...sample,filename:'private.pdf'}))).status,400);
+  assert.equal((await POST(request({...sample,event:'read_document'}))).status,400);
+  assert.equal((await POST(request({...sample,duration:'123 milliseconds'}))).status,400);
+  assert.equal((await POST(request({...sample,text:'x'.repeat(700)}))).status,413);
+  assert.equal((await POST(request(sample,{'sec-gpc':'1'}))).status,204);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM precidoc_usage_daily').get().n,0);
+  for(let i=0;i<2;i++)assert.equal((await POST(request(sample))).status,204);
+  assert.equal(db.prepare('SELECT total FROM precidoc_usage_daily').get().total,2);
+  assert.deepEqual(db.prepare('PRAGMA table_info(precidoc_usage_daily)').all().map(row=>row.name),['day','event','duration','total']);
+  db.exec("INSERT INTO precidoc_usage_daily VALUES ('2000-01-01','sample_started','none',9)");await POST(request(sample));assert.equal(db.prepare("SELECT COUNT(*) AS n FROM precidoc_usage_daily WHERE day='2000-01-01'").get().n,0);
+  db.exec("INSERT INTO precidoc_newsletter_rate VALUES ('old',0,1)");await POST(request(sample));assert.equal(db.prepare("SELECT COUNT(*) AS n FROM precidoc_newsletter_rate WHERE fingerprint='old'").get().n,0);
+  let limited=false;for(let i=0;i<65;i++){if((await POST(request(sample))).status===429)limited=true;}assert(limited);
+  available=false;assert.equal((await POST(request(sample,{'cf-connecting-ip':'192.0.2.9'}))).status,503);
+  const storage=new Map();global.localStorage={getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)};
+  let sent=[];global.fetch=async(url,options)=>{assert.equal(options.credentials,'omit');sent.push(JSON.parse(options.body));return new Response(null,{status:204});};
+  assert.equal(usage.usageEnabled(),false);usage.trackUsage('sample_started');assert.equal(sent.length,0);
+  usage.setUsageEnabled(true);usage.trackUsage('processing_succeeded',2300);assert.deepEqual(sent[0],{event:'processing_succeeded',duration:'1_to_5s',consent:true});
+  usage.setUsageEnabled(false);usage.trackUsage('sample_started');assert.equal(sent.length,1);
+  Object.defineProperty(global,'navigator',{configurable:true,value:{globalPrivacyControl:true}});usage.setUsageEnabled(true);usage.trackUsage('sample_started');assert.equal(sent.length,1);
+  db.close();console.log('Passed optional statistics: off without consent, payload allowlist/no personal fields, origin/body limits, GPC, daily aggregation, retention pruning, rate limits, provider failures, and revocation. SQLite adapter; no live events sent.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

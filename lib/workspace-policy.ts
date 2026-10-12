@@ -4,6 +4,8 @@ export const TRIAL_POLICY = {
   maxBytes: 5 * 1024 * 1024,
   maxPages: 20,
   maxCharacters: 100000,
+  maxTotalBytes: 5 * 1024 * 1024,
+  maxTotalCharacters: 100000,
   chunkSize: 1000,
 } as const;
 export const FULL_POLICY = {
@@ -12,4 +14,6 @@ export const FULL_POLICY = {
   maxBytes: 15 * 1024 * 1024,
   maxPages: 200,
   maxCharacters: 750000,
+  maxTotalBytes: 50 * 1024 * 1024,
+  maxTotalCharacters: 2000000,
 } as const;

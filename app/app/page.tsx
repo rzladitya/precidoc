@@ -17,5 +17,5 @@ export default async function AppPage() {
     return <Registration user={{ email: user.email, name: user.fullName ?? '' }} signInHref={signInPath('/register')} unavailable/>;
   }
   if (!account) redirect('/register');
-  return <Workspace accountName={account.display_name} signOutHref={signOutPath()}/>;
+  return <Workspace key={user.userId} accountId={user.userId} accountName={account.display_name} signOutHref={signOutPath()}/>;
 }

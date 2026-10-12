@@ -92,3 +92,15 @@ Validate the deployed homepage and `/sample`, sign up, verify email, sign in,
 create the Precidoc account, reload `/app`, and sign out. Confirm unauthenticated
 account requests return 401 and forged Sites identity headers cannot grant access.
 Live positive authentication/database checks require actual credentials.
+
+## V2 validation and deployment
+
+The tracked OpenNext configuration uses the supported Webpack build to keep the
+Worker upload compact. Run `pnpm build:worker`, then `pnpm deploy:worker -- --keep-vars`.
+The V2 migration is additive (`pnpm db:migrate`); it creates the optional daily
+usage aggregate table and does not change or delete existing account records.
+Keep all four runtime credentials as Worker **Secrets**, including `RESEND_API_KEY`.
+
+Optional usage statistics default to off. They cannot block local file processing.
+Public Product/Privacy/Terms/Support pages disclose the actual browser-only
+document lifecycle and the limits of rule-based review.

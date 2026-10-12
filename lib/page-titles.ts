@@ -1,4 +1,6 @@
 export const pageTitles = {
+  notfound:['Page Not Found','Halaman Tidak Ditemukan'], error:['Page Unavailable','Halaman Belum Tersedia'],
+  product: ['Product & Capabilities', 'Produk & Kemampuan'], privacy: ['Privacy Policy', 'Kebijakan Privasi'], terms: ['Terms of Use', 'Ketentuan Penggunaan'], support: ['Support & FAQ', 'Bantuan & FAQ'], changelog: ['Product Changelog', 'Pembaruan Produk'],
   home: ['Prepare Documents for AI', 'Siapkan Dokumen untuk AI'],
   signin: ['Sign In', 'Masuk'], signup: ['Create an Account', 'Buat Akun'], verify: ['Verify Your Email', 'Verifikasi Email'],
   sample: ['Sample Workspace', 'Workspace Contoh'], workspace: ['Document Workspace', 'Workspace Dokumen'],
@@ -23,6 +25,7 @@ const specificDescriptions: Partial<Record<PageTitle, readonly [string, string]>
 };
 export const getPageDescription = (page: PageTitle, locale: 'en' | 'id') => specificDescriptions[page]?.[locale === 'en' ? 0 : 1] ?? pageDescriptions[locale];
 const routes: Record<string, PageTitle> = {
+  '/product':'product','/privacy':'privacy','/terms':'terms','/support':'support','/changelog':'changelog',
   '/sample': 'sample', '/app': 'workspace', '/register': 'signup', '/auth/sign-in': 'signin', '/auth/sign-out': 'signout', '/auth/forgot-password': 'forgot', '/auth/reset-password': 'reset',
   '/pricing': 'pricing', '/blog': 'blog', '/blog/check-pdf-extraction': 'pdfguide', '/blog/chunk-runbooks-with-context': 'chunkguide', '/blog/export-with-source-references': 'exportguide',
   '/newsletter/unsubscribe': 'unsubscribe',

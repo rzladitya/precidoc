@@ -11,8 +11,9 @@ class BrowserDOMParser extends DOMParser {
   parseFromString(value,type){return super.parseFromString(type==='text/html'?`<!doctype html><html><head></head><body>${value}</body></html>`:value,type)}
 }
 Object.assign(globalThis,{DOMParser:BrowserDOMParser,DOMMatrix,Path2D,ImageData});
-const source=fs.readFileSync('lib/documents.ts','utf8').replace("'/pdf.worker.min.mjs'",JSON.stringify(path.resolve('public/pdf.worker.min.mjs'))).replace("'/pdfjs/cmaps/'",JSON.stringify(path.resolve('public/pdfjs/cmaps')+'/')).replace("'/pdfjs/standard_fonts/'",JSON.stringify(path.resolve('public/pdfjs/standard_fonts')+'/'));
+const source=fs.readFileSync('lib/documents.ts','utf8').replace("'./file-safety'","'./file-safety.mjs'").replace("'/pdf.worker.min.mjs'",JSON.stringify(path.resolve('public/pdf.worker.min.mjs'))).replace("'/pdfjs/cmaps/'",JSON.stringify(path.resolve('public/pdfjs/cmaps')+'/')).replace("'/pdfjs/standard_fonts/'",JSON.stringify(path.resolve('public/pdfjs/standard_fonts')+'/'));
 fs.mkdirSync('.sites-runtime',{recursive:true});
+fs.writeFileSync('.sites-runtime/file-safety.mjs',ts.transpileModule(fs.readFileSync('lib/file-safety.ts','utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText);
 fs.writeFileSync('.sites-runtime/documents-test.mjs',ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText);
 const d=await import('../.sites-runtime/documents-test.mjs');
 const policySource=fs.readFileSync('lib/workspace-policy.ts','utf8');
@@ -107,3 +108,14 @@ assert.equal(d.countMarkdownTables('text | --- is not a table'),0);
 assert.equal(d.countMarkdownTables('Name | Value\n:--- | ---:\nA | 1'),1);
 const multiTable=await d.parseFile(new File(['# Tables\n\n'+table+'\n\n'+table],'tables.md'),()=>{});assert.equal(multiTable.units[0].tableCount,2);URL.revokeObjectURL(multiTable.objectUrl);
 console.log('Passed regressions: PDF dedup preserves both pages; section context retained; accurate Markdown table counts including fenced code.');
+
+const fenced=await d.parseFile(new File(['# Operations\n\n```sh\n# This is a code comment\nprintf "hello"\n```\n\n## Verification\n\nCheck the result.'],'fenced.md'),()=>{});
+assert.equal(fenced.units.length,2);assert(fenced.units[0].text.includes('# This is a code comment'));assert.equal(fenced.units[1].title,'Verification');URL.revokeObjectURL(fenced.objectUrl);
+console.log('Passed Markdown regression: fenced code comments do not become artificial source sections.');
+
+const codeText='# Configuration\n\n```yaml\nroot:\n  nested: true\n  description: "two  spaces"\n```';
+const preserved=await d.parseFile(new File([codeText],'config.md'),()=>{});
+assert(preserved.units[0].original.includes('  nested: true'));assert(d.buildChunks(preserved)[0].text.includes('"two  spaces"'));
+const differentIndent={...preserved,units:[preserved.units[0],{...preserved.units[0],id:'other',text:preserved.units[0].text.replace('  nested: true','nested: true')}]};
+assert.equal(d.buildChunks(differentIndent).length,2);URL.revokeObjectURL(preserved.objectUrl);
+console.log('Passed source integrity: code indentation and repeated spaces preserved; distinct indentation is not merged as an exact duplicate.');

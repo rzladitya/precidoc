@@ -30,7 +30,9 @@ export function AuthForm({ initialSignup = false }: { initialSignup?: boolean })
     try { const url = new URL(value, window.location.origin); return value.startsWith('/') && !value.startsWith('//') && url.origin === window.location.origin && !url.pathname.startsWith('/auth/') && !url.pathname.startsWith('/api/') ? url.pathname + url.search : '/register'; }
     catch { return '/register'; }
   }
-  function errorCode(error: {code?: string; message?: string}, fallback: string) {
+  function errorCode(error: {code?: string; message?: string; status?: number}, fallback: string) {
+    if(error.status&&error.status>=500)return 'unavailable';
+    if(error.status===429)return 'TOO_MANY_REQUESTS';
     return ['INVALID_EMAIL_OR_PASSWORD','USER_ALREADY_EXISTS','USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL','EMAIL_NOT_VERIFIED','TOO_MANY_REQUESTS'].includes(error.code ?? '') ? error.code! : fallback;
   }
   async function submit(event: React.FormEvent) {
@@ -101,7 +103,7 @@ export function AuthForm({ initialSignup = false }: { initialSignup?: boolean })
     </form>}
     {message && <p className={notice ? 'account-notice' : 'account-error'} role={notice ? 'status' : 'alert'}>{messages[message]}</p>}
     {verifying && <button className="button outline" onClick={() => { setVerifying(false); setOtp(''); setSignup(false); setMessage(''); }} disabled={busy}>{text('Back to sign in', 'Kembali ke login')}</button>}
-    <p className="account-privacy">{text('Your documents stay in your browser. Export your work before closing the tab.', 'Dokumen tetap di browser kamu. Unduh hasil sebelum menutup tab.')}</p>
+    <p className="account-privacy"><Link href="/privacy">{text('Privacy Policy','Kebijakan Privasi')}</Link> · <Link href="/terms">{text('Terms','Ketentuan')}</Link><br/>{text('Your documents stay in your browser. Export your work before closing the tab.', 'Dokumen tetap di browser kamu. Unduh hasil sebelum menutup tab.')}</p>
     <Link className="account-sample-link" href="/sample">{text('Try Precidoc without signing in', 'Coba Precidoc tanpa masuk')}</Link>
   </AccountShell>;
 }

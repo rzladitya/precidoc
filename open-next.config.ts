@@ -1,3 +1,6 @@
 import { defineCloudflareConfig } from "@opennextjs/cloudflare";
 
-export default defineCloudflareConfig({});
+// Use the supported Webpack build to keep the Worker upload compact.
+const config = { ...defineCloudflareConfig({}), buildCommand: 'pnpm exec next build --webpack' };
+
+export default config;

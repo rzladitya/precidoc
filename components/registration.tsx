@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { AccountShell } from './account-shell';
+import {trackUsage} from '@/lib/usage';
 import { AuthForm } from './auth-form';
 import { useLanguage, usePageTitle } from '@/components/language';
 
@@ -46,7 +47,9 @@ export function Registration({ user, signInHref, unavailable = false }: { user: 
     setBusy(true); setError('');
     try {
       const response = await fetch('/api/account', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) });
-      if (response.ok) { window.location.assign('/app'); return; }
+      // Hard navigation resets the transient workspace and fetches the new authenticated page.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      if (response.ok) { trackUsage('registration_completed');window.location.assign('/app'); return; }
       const detail = await response.json().catch(() => ({}));
       if (response.status === 401) setSignInRequired(true);
       const code = detail && typeof detail === 'object' && 'error' in detail && typeof detail.error === 'string' ? detail.error : 'failed';

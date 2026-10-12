@@ -24,3 +24,14 @@ await sql`CREATE TABLE IF NOT EXISTS precidoc_newsletter_rate (
   attempts integer NOT NULL
 )`;
 console.log('Precidoc newsletter tables are available in Neon.');
+
+await sql`CREATE TABLE IF NOT EXISTS precidoc_usage_daily (
+  day text NOT NULL,
+  event text NOT NULL,
+  duration text NOT NULL,
+  total integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (day,event,duration)
+)`;
+console.log('Precidoc optional aggregate usage table is available in Neon.');
+
+await sql`CREATE INDEX IF NOT EXISTS precidoc_newsletter_rate_bucket_idx ON precidoc_newsletter_rate (bucket)`;

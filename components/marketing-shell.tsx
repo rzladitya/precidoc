@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import {UsagePreference} from './usage-preference';
 import { Brand } from '@/components/brand';
 import { LanguageSwitch, useLanguage } from '@/components/language';
 
@@ -18,7 +19,7 @@ export function MarketingHeader() {
     return () => window.removeEventListener('keydown', close);
   }, [open]);
   const links = [
-    { href: '/#fitur', label: locale === 'en' ? 'Product' : 'Produk' },
+    { href: '/product', label: locale === 'en' ? 'Product' : 'Produk' },
     { href: '/pricing', label: locale === 'en' ? 'Pricing' : 'Harga' },
     { href: '/blog', label: 'Blog' },
   ];
@@ -35,5 +36,5 @@ export function MarketingHeader() {
 
 export function MarketingFooter() {
   const { locale } = useLanguage();
-  return <footer className="public-footer container"><Link href="/" aria-label={locale === 'en' ? 'Precidoc home' : 'Beranda Precidoc'}><Brand /></Link><nav aria-label={locale === 'en' ? 'Footer navigation' : 'Navigasi footer'}><Link href="/pricing">{locale === 'en' ? 'Pricing' : 'Harga'}</Link><Link href="/blog">Blog</Link><Link href="/sample">{locale === 'en' ? 'Try a sample' : 'Coba contoh'}</Link><Link href="/#faq">FAQ</Link></nav><span>© {new Date().getFullYear()} Rainc</span></footer>;
+  return <footer className="public-footer container"><Link href="/" aria-label={locale === 'en' ? 'Precidoc home' : 'Beranda Precidoc'}><Brand /></Link><nav aria-label={locale === 'en' ? 'Footer navigation' : 'Navigasi footer'}><Link href="/pricing">{locale === 'en' ? 'Pricing' : 'Harga'}</Link><Link href="/blog">Blog</Link><Link href="/sample">{locale === 'en' ? 'Try a sample' : 'Coba contoh'}</Link><Link href="/changelog">Changelog</Link><Link href="/support">{locale==='en'?'Support & FAQ':'Bantuan & FAQ'}</Link><Link href="/privacy">{locale==='en'?'Privacy':'Privasi'}</Link><Link href="/terms">{locale==='en'?'Terms':'Ketentuan'}</Link></nav><span>© {new Date().getFullYear()} RAinc</span><UsagePreference/></footer>;
 }
