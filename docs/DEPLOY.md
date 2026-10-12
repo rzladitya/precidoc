@@ -66,6 +66,7 @@ apply them to Postgres. New Drizzle migrations use `drizzle-postgres/`.
 pnpm test
 node tests/verify-account.cjs
 node tests/verify-trial.cjs
+node tests/verify-domain-migration.cjs
 pnpm exec tsc --noEmit --incremental false
 pnpm build:worker
 pnpm preview:worker --port 8787
@@ -85,6 +86,8 @@ pnpm deploy:worker
 `wrangler.jsonc` attaches `precidoc.rainc.tech` as a custom domain to the
 `precidoc` Worker. The previous `precidoc.rainc.web.id` domain remains attached
 and returns a permanent 308 redirect to the same path and query on the new domain.
+The proxy performs this redirect with the original URL so encoded tokens and
+empty root paths survive OpenNext routing without interpolation or decoding.
 Keep both origins trusted in Neon Auth while existing authentication links expire.
 Users sign in again on the new domain because session cookies belong to their host.
 The database and Neon Auth service URL stay the same; changing the website domain
